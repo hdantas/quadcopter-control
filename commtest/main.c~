@@ -12,17 +12,17 @@ void main(void) {
 
 	//Initialise communication
 	if (0 != comm_init())
-		return -1;
+		return;
 
 	//Send keypress of Q
 	printf("PC sending Key: Q\n");
 	if (0 != send_data(KEY_Q, 0, 0))
-		return -2;
+		return;
 
 	//Send keypress of W
 	printf("PC sending Key: W\n");
 	if (0 != send_data(KEY_W, 0, 0))
-		return -3;
+		return;
 
 	//Create dummy axes values
 	axes[0] = 0x05;	axes[1] = 0x17;
@@ -30,7 +30,7 @@ void main(void) {
 	//Send
 	printf("PC sending Axes...\n");
 	if (0 != send_data(RPYL, axes, 4))
-		return -4;
+		return;
 
 	//Request logfile
 	retrieve_log();
@@ -38,7 +38,7 @@ void main(void) {
 	//Send keypress of Esc
 	printf("PC sending Key: ESC\n");
 	if (0 != send_data(KEY_ESC, 0, 0))
-		return -5;
+		return;
 
 /*	printf("Waiting for data...\n");
 	while (0 == recv_data(&type, &data, &len));
