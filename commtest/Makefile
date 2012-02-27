@@ -16,4 +16,10 @@ logsendtest:
 	gcc -o pc servertest1.c socket.c log.c comm.c checksum.c convert.c
 	gcc -o qr servertest2.c socket.c log.c comm.c checksum.c convert.c
 
+comm:
+	gcc -o comm main.c comm.c checksum.c serial.c
+	gcc -o comm main.c comm.c checksum.c serial.c convert.c log.c
+x32_comm.ce:
+	lcc-x32 x32_main.c comm.c checksum.c x32_serial.c -I${X32INC} -lib ${X32INC} -Wl-lib -o x32_comm.ce
+
 

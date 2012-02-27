@@ -10,10 +10,30 @@
 typedef enum {
 	ACK				= COMM_TYPE_SIZE_0,			//0-byte sized body
 	KEY_Q,
+	KEY_A,
+	KEY_Z,
 	KEY_W,
 	KEY_E,
+	KEY_U,
+	KEY_J,
+	KEY_I,
+	KEY_K,
+	KEY_O,
+	KEY_L,
+	KEY_0,
+	KEY_1,
+	KEY_2,
+	KEY_3,
+	KEY_4,
+	KEY_5,
+	KEY_RIGHT,
+	KEY_LEFT,
+	KEY_UP,
+	KEY_DOWN,
 	KEY_ESC,
+	KEY_RETURN,
 	REQ_LOG,
+
 
 	SOMETHING		= COMM_TYPE_SIZE_1,			//1-byte sized body
 

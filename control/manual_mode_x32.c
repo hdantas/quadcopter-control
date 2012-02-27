@@ -19,7 +19,7 @@
 #define X32_QR_s4 		peripherals[PERIPHERAL_XUFO_S4]
 #define X32_QR_s5 		peripherals[PERIPHERAL_XUFO_S5]
 #define X32_QR_timestamp 	peripherals[PERIPHERAL_XUFO_TIMESTAMP]
-
+#define X32_display		peripherals[PERIPHERAL_DISPLAY]
 typedef enum {
 		SAFE,
 		PANIC,
@@ -53,7 +53,7 @@ void main(void) {
 	unsigned char* data;
 	int len;
 	int I;
-	int result=0;
+	int result;
 
 	/* prepare QR rx interrupt handler and associated variables
 	 */
@@ -72,7 +72,7 @@ void main(void) {
          */
         X32_timer_per = 2 * CLOCKS_PER_MS;
         SET_INTERRUPT_VECTOR(INTERRUPT_TIMER1, &isr_timer);
-        SET_INTERRUPT_PRIORITY(INTERRUPT_TIMER1, 22);
+        SET_INTERRUPT_PRIORITY(INTERRUPT_TIMER1, 5);
         ENABLE_INTERRUPT(INTERRUPT_TIMER1);
 
 	init_state();
@@ -86,33 +86,29 @@ void main(void) {
 	//Initialise
 	mode=SAFE;
 	finished=0;	
-//	printf("Mode is: %d\n", mode);
-//	printf("\nQR is Ready to receive data...\n");
+	//printf("Mode is: %d\n", mode);
+	//printf("\nQR is Ready to receive data...\n");
 
-//	log_msg("QR is ready to receive data...");
-//	log_int(mode);
-
-	X32_leds |= 0x01;
+	X32_leds =0x0;
 
 	//Wait until data can be received
 	while (!finished)
-	{
-		X32_leds |= 0x04;
+	{	
 		result = recv_data(&type, &data, &len);
-//		printf("%d\n", result);
-		if(result == 1) 
+		if(1 == result) 
 		{		
-		
+
 			switch (mode) 
 			{			
 				case SAFE: /* Safe Mode*/
-					//printf("%d, %2x, %d\n", type, data[0], len);
+					//printf("%2x, %2x, %2x\n", type, data[0], len);
+					//X32_leds &= 0x04;
 					safe_mode_ctrl(type, data, len);
 					break;
 				case PANIC: /* Panic Mode*/
 					panic_mode_ctrl(type, data, len);
 					break;
-				case MANUAL: /* Manual Mode*/	
+				case MANUAL: /* Manual Mode*/
 					manual_mode_ctrl(type, data, len);
 					break;
 				case CALIBRATION: /* Calibration Mode*/
@@ -129,13 +125,12 @@ void main(void) {
 		
 			//Free buffer memory again (IMPORTANT!)
 			free(data);
-		} else if (result == -1) {
-			X32_leds |= 0x20;
+		} else if (-1 == result) {
+			//X32_leds |= 0x20;
 		}
-		
+		 else 
+			;//X32_display=result;
 	}
-
-	X32_leds |= 0x10;
 
 	//Uninitialise
 	comm_uninit();
@@ -145,21 +140,21 @@ void safe_mode_ctrl(comm_type type, unsigned char* data, int len)
 	{
 		if (type==KEY_ESC)
 		{
-			if ((roll==0) && (pitch==0) && (yaw==0) && (lift==0))
+			finished=1;
+
+/*			if ((roll==0) && (pitch==0) && (yaw==0) && (lift==0))
 			{		
 				printf("Exiting...\n");			
 				finished=1;
 			}
 			else 
-				printf("Error roll, pitch, yaw and lift not zero, can't esc\n");	
+				printf("Error roll, pitch, yaw and lift not zero, can't esc\n");*/	
 					
 		}
-		else if (type==KEY_Q)//TODO only "2" key
+		else if (type==KEY_2)//TODO only "2" key
 		{
 			if ((roll==0) && (pitch==0) && (yaw==0) && (lift==0))
-			{
 				mode=MANUAL;
-			}
 			else 
 				printf("Error roll, pitch, yaw and lift not zero, can't switch\n");
 		}
@@ -171,17 +166,12 @@ void manual_mode_ctrl(comm_type type, unsigned char* data, int len)
 	{
 		if (len==0)	//data key
 		{
-			if ((type!=KEY_Q)&&(type!=KEY_Q)&&(type!=KEY_Q)&&(type!=KEY_Q)) //TODO		
-			{				
+			if ((type!=KEY_0)&&(type!=KEY_1)&&(type!=KEY_2)&&(type!=KEY_3)&&(type!=KEY_4)&&(type!=KEY_5)) //TODO		
 				keyb(type);
-			}
 			else
 			{
 				if ((roll==0) && (pitch==0) && (yaw==0) && (lift==0))
-				{				
 					keyb(type);
-					//printf("W\n");
-				}
 			}
 		}
 		else if (len==4)//axes data
@@ -207,6 +197,8 @@ void manual_mode_ctrl(comm_type type, unsigned char* data, int len)
 		oo2 = (lift - 2 * roll + yaw) / 4;
 		oo3 = (lift - 2 * pitch - yaw) / 4;
 		oo4 = (lift + 2 * roll + yaw) / 4;
+
+		
 	}
 void calibration_mode(comm_type type, unsigned char* data, int len)
 	{
@@ -224,69 +216,69 @@ void 	keyb(comm_type type)
 
 		//TODO values of case are not right
 			
-		case 0x1B: /* ESC: abort / exit */
+		case KEY_ESC: /* ESC: abort / exit */
 			break;
-		case 0x0A: /*increment control mode */
+		case KEY_RETURN: /*increment control mode */
 			break;
 
 		/* choose mode*/
 
-		case '0': /*Safe Mode*/
+		case KEY_0: /*Safe Mode*/
 			mode=SAFE;
 			break;
-		case '1': /*Panic Mode*/
+		case KEY_1: /*Panic Mode*/
 			mode=PANIC;				
 			break;
-		case '2': /*Manual Mode*/
+		case KEY_2: /*Manual Mode*/
 			mode=MANUAL;
 			break;
-		case '3': /*Calibration Mode*/
+		case KEY_3: /*Calibration Mode*/
 			mode=CALIBRATION;
 			break;
-		case '4': /*Yaw control Mode*/
+		case KEY_4: /*Yaw control Mode*/
 			mode=YAW;
 			break;
-		case '5': /*Full control mode*/
+		case KEY_5: /*Full control mode*/
 			mode=FULL;
 			break;
 
 		/* quad rotor control*/	
 
-		case 'a': /* increase lift */
+		case KEY_A: /* increase lift */
 			kb_lift += 1;
       			break;
-		case 'z': /* decrease lift */
+		case KEY_Z: /* decrease lift */
 			kb_lift -= 1;
       			break;
-		case 0x43: /*right arrow: roll down maybe*/
+		case KEY_RIGHT: /*right arrow: roll down maybe*/
 			kb_roll += 1;
 			break;
-		case 0x44: /*left arrow: roll up maybe*/
+		case KEY_LEFT: /*left arrow: roll up maybe*/
 			kb_roll -= 1;
 			break;
-		case 0x41: /*up arrow: pitch down */
+		case KEY_UP: /*up arrow: pitch down */
 			kb_pitch -= 1;
 			break;
-		case 0x42: /*down arrow: pitch up */
+		case KEY_DOWN: /*down arrow: pitch up */
 			kb_pitch += 1;
 			break;
-		case 'w': /* increase yaw */
+		case KEY_W: /* increase yaw */
 			kb_yaw += 1; 
       			break;
-		case 'q': /* decrease yaw */
+		case KEY_Q: /* decrease yaw */
 			kb_yaw -= 1; 
       			break;
-		case 'u': /*yaw control P up*/
+		case KEY_U: /*yaw control P up*/
 			break;
-		case 'j': /*yaw control P down*/
+		case KEY_J: /*yaw control P down*/
 			break;
-		case 'i': /*roll/pitch control P1 up*/
+		case KEY_I: /*roll/pitch control P1 up*/
 			break;
-		case 'k': /*roll/pitch control P1 down*/
+		case KEY_K: /*roll/pitch control P1 down*/
 			break;
-		case 'o': /*roll/pitch control P2 up*/
+		case KEY_O: /*roll/pitch control P2 up*/
 			break;
-		case 'l': /*roll/pitch control P2 down*/
+		case KEY_L: /*roll/pitch control P2 down*/
 			break;
 		default:
 			break;
@@ -304,9 +296,12 @@ void init_state(void)
 void isr_timer(void)
 {
 	
+	//printf("%d %d %d %d", oo1, oo2, oo3, oo4);
         /* send actuator values to ae0..3 QR peripheral regs
          */
-        X32_QR_a0 = oo1;
+        
+	X32_QR_a0 = oo1;
+	//X32_display = oo1;
         X32_QR_a1 = oo2;
         X32_QR_a2 = oo3;
         X32_QR_a3 = oo4;
