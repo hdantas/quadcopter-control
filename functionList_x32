@@ -1,0 +1,20 @@
+/****************** X32 ******************/
+
+//x32_log.c
+void log_start()
+void log_stop()
+void write_to_log(log_type type, unsigned char* data, int len)
+void log_msg(const char* msg)
+void log_data(log_type type, unsigned char* data, int len)
+void log_event(log_type event)
+void log_int(int value)
+void log_byte(unsigned char c) 
+void log_transmit()
+
+//x32_serial.c
+int serial_init()
+void serial_uninit() 
+int serial_read(unsigned char* buffer)
+int serial_write(unsigned char c)
+void isr_serial_rx(void)
+void isr_serial_tx(void)
