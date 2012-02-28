@@ -1,3 +1,6 @@
+//I edit the line with TODO to allow the measurament of time
+//I use it only in pc_stress end x32_stress. in other case you must use X32_serial
+
 #include "serial.h"
 
 #include "x32_nexys.h"
@@ -10,6 +13,8 @@
 #define X32_serial_status	peripherals[PERIPHERAL_PRIMARY_STATUS]
 #define X32_leds		peripherals[PERIPHERAL_LEDS]
 #define X32_display		peripherals[PERIPHERAL_DISPLAY]
+
+extern int start_time;	//TODO
 
 //Local ISRs
 void isr_serial_rx(void);
@@ -120,6 +125,7 @@ int serial_write(unsigned char c) {
 
 //ISRs
 void isr_serial_rx(void) {
+	start_time=peripherals[PERIPHERAL_US_CLOCK]; //TODO
 	//Keep reading while flag is raised	
 	while (X32_serial_status & 0x02) {
 		//X32_leds=serial_buffer_recv_top;

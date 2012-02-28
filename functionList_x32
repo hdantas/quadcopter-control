@@ -18,3 +18,27 @@ int serial_read(unsigned char* buffer)
 int serial_write(unsigned char c)
 void isr_serial_rx(void)
 void isr_serial_tx(void)
+
+//mode_main_x32.c
+void isr_timer(void);
+void keyb(comm_type type);
+void init_state(void);
+
+//safe_mode_x32.c
+void safe_mode_ctrl(comm_type type, unsigned char* data, int len);
+
+//panic_mode_x32.c
+void panic_mode_ctrl(comm_type type, unsigned char* data, int len);
+
+//manual_mode_x32.c
+void manual_mode_ctrl(comm_type type, unsigned char* data, int len);
+
+//calibration_mode_x32.c
+void calibration_mode(comm_type type, unsigned char* data, int len);
+
+//yaw_mode_x32.c
+void yaw_mode_ctrl(comm_type type, unsigned char* data, int len);
+
+//full_mode_x32.c
+void full_mode_ctrl(comm_type type, unsigned char* data, int len);
+

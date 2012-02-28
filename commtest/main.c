@@ -16,12 +16,12 @@ void main(void) {
 
 	//Send keypress of Q
 	printf("PC sending Key: Q\n");
-	if (0 != send_data(KEY_Q, 0, 0))
+	if (0 != send_data(KEYQ, 0, 0))
 		return -2;
 
 	//Send keypress of W
 	printf("PC sending Key: W\n");
-	if (0 != send_data(KEY_W, 0, 0))
+	if (0 != send_data(KEYW, 0, 0))
 		return -3;
 
 	//Create dummy axes values
@@ -37,7 +37,7 @@ void main(void) {
 
 	//Send keypress of Esc
 	printf("PC sending Key: ESC\n");
-	if (0 != send_data(KEY_ESC, 0, 0))
+	if (0 != send_data(KEYESC, 0, 0))
 		return -5;
 
 /*	printf("Waiting for data...\n");

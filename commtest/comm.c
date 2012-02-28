@@ -1,7 +1,6 @@
 #include "comm.h"
 #include "serial.h"
 #include "checksum.h"
-#include "log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -69,8 +68,6 @@ int send_data(comm_type type, unsigned char* data, int len) {
 	//Add checksum to tail
 	packet[len+1] |= checksum;
 
-	//Log
-	log_data(LOG_SEND_PACKET, packet, len+2);
 
 	//Send packet byte-by-byte over serial connection
 	for (I = 0; I < len+2; I++)
@@ -98,9 +95,6 @@ int recv_data(comm_type* type, unsigned char** data, int* len) {
 		if (ftype == HEAD) {
 			if (await_frame_type != HEAD) {
 				//Missed end of previous packet, 
-				log_msg("Unexpected frame type: head; discarding frame buffer");
-				log_byte(c);
-				log_data(LOG_COMM_DISCARD_BUFFER, frame_buffer, frame_buffer_top);
 				//Empty buffer
 				frame_buffer_top = 0;
 			}
@@ -109,9 +103,6 @@ int recv_data(comm_type* type, unsigned char** data, int* len) {
 		} else if (ftype == TAIL) {
 			if (await_frame_type != TAIL) {
 				//Unexpected end of packet
-				log_msg("Unexpected frame type: tail; discarding frame and frame buffer");
-				log_byte(c);
-				log_data(LOG_COMM_DISCARD_BUFFER, frame_buffer, frame_buffer_top);
 				//Empty buffer
 				frame_buffer_top = 0;
 				continue;
@@ -125,14 +116,11 @@ int recv_data(comm_type* type, unsigned char** data, int* len) {
 		} else if (ftype == BODY) {
 			if (await_frame_type == HEAD) {
 				//Unexpected body frame, ignore
-				log_msg("Unexpected frame type: body; discarding single frame");
-				log_byte(c);
 				continue;
 			}
 		}
 
 		//Add character to frame buffer
-		log_byte(c);
 		frame_buffer[frame_buffer_top] = c;
 
 		//Process if complete
@@ -142,7 +130,6 @@ int recv_data(comm_type* type, unsigned char** data, int* len) {
 				//Verify packet using checksum
 				if (verify_checksum(frame_buffer, frame_buffer_top+1)) {
 					//Packet is valid
-					log_data(LOG_RECV_PACKET, frame_buffer, frame_buffer_top+1);
 
 					//Dismantle and return values
 					*type = frame_buffer[0] & 0x3F;
@@ -156,8 +143,6 @@ int recv_data(comm_type* type, unsigned char** data, int* len) {
 
 				} else {
 					//Invalid checksum
-					log_msg("Invalid checksum; discarding frame buffer");
-					log_data(LOG_COMM_DISCARD_BUFFER, frame_buffer, frame_buffer_top+1);
 					
 					//Empty buffer, wait for head
 					frame_buffer_top = 0;
@@ -165,8 +150,6 @@ int recv_data(comm_type* type, unsigned char** data, int* len) {
 				}
 			} else {
 				//Invalid packet length
-				log_msg("Invalid packet length; discarding frame buffer");
-				log_data(LOG_COMM_DISCARD_BUFFER, frame_buffer, frame_buffer_top+1);
 
 				//Empty buffer, wait for head
 				frame_buffer_top = 0;
@@ -177,8 +160,6 @@ int recv_data(comm_type* type, unsigned char** data, int* len) {
 			frame_buffer_top++;
 			if (frame_buffer_top >= FRAME_BUFFER_SIZE) {
 				//Buffer is full
-				log_msg("Frame buffer full; discarding");
-				log_data(LOG_COMM_DISCARD_BUFFER, frame_buffer, frame_buffer_top);
 
 				//Empty buffer, wait for head
 				frame_buffer_top = 0;

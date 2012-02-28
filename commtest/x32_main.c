@@ -33,11 +33,11 @@ void main(void) {
 		//Receive data (make non-blocking blocking)
 		while (0 == recv_data(&type, &data, &len));
 
-		if (type == KEY_ESC) {
+		if (type == KEYESC) {
 			//Done
 			free(data);
 			break;
-		} else if (type == REQ_LOG) {
+		} else if (type == REQLOG) {
 			//Send logfile
 			peripherals[PERIPHERAL_LEDS] |= 0x80;
 			log_transmit();

@@ -50,7 +50,7 @@ void retrieve_log() {
 	
 
 	//Send logfile request
-	if (0 != send_data(REQ_LOG, 0, 0)) {
+	if (0 != send_data(REQLOG, 0, 0)) {
 		printf("Error sending log request\n");
 		return;
 	}
