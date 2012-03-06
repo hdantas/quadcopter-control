@@ -7,5 +7,5 @@
 
 void full_mode_ctrl(void)
 {
-
+	mode=SAFE;
 }

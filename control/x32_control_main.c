@@ -14,6 +14,9 @@ int qr_a0, qr_a1, qr_a2, qr_a3;
 comm_type mode, type;
 volatile int finished;
 
+int oo1, oo2, oo3, oo4;
+int s0, s1, s2, s3, s4, s5, timestamp;
+int p_yaw, yaw_error;
 
 unsigned char* data;
 int len;
@@ -22,13 +25,11 @@ void main(void) {
 	//Declare variables
 	int result=0;
 
-
-
 	// prepare QR rx interrupt handler and associated variables
 	 
-//        SET_INTERRUPT_VECTOR(INTERRUPT_XUFO, &isr_qr_link);
-//        SET_INTERRUPT_PRIORITY(INTERRUPT_XUFO, 21);
-//        ENABLE_INTERRUPT(INTERRUPT_XUFO);
+        SET_INTERRUPT_VECTOR(INTERRUPT_XUFO, &isr_qr_link);
+        SET_INTERRUPT_PRIORITY(INTERRUPT_XUFO, 21);
+        ENABLE_INTERRUPT(INTERRUPT_XUFO);
 
 	//An interrupt is raised (INTERRUPT_XUFO) once the 7 new values are
 	//available to the X32. As an additional feature, there is also a counter register (PERIPHERAL_XUFO_COUNT) that
@@ -52,7 +53,6 @@ void main(void) {
 
 	ENABLE_INTERRUPT(INTERRUPT_GLOBAL);
 
-
 	finished=0;	
 
 	X32_leds =0x1;
@@ -63,18 +63,10 @@ void main(void) {
 		X32_leds |=0x2;
 		result = recv_data(&type, &data, &len);
 		if ( result == 1) {
-			type = FULL;
-			X32_display = len;
-			//toggleLED(0x04);
-			if (type == FULL) {
-/*				toggleLED(0x08);*/
-				handleMODE();
-			}
-			else if (len==4 && type==RPYL)
-				handleRPYL();
-			//Free buffer memory again (IMPORTANT!)
+			handleInput(type);
 			free(data);
 		}
+		handleMode();
 	}
 	//Uninitialise
 	comm_uninit();
@@ -84,76 +76,161 @@ void main(void) {
 void init_state(void)
 {
 	lift = roll = pitch = yaw = 0;
-	qr_a0 = qr_a1 = qr_a2 = qr_a3 = 0;
-	safe_mode_ctrl(); //starts in safe mode
+	oo1 = oo2 = oo3 = oo4 = 0;
+	p_yaw=0;
+	mode = SAFE; //starts in safe mode
 }
 
-void isr_timer(void)
-{
-/*	int clk = X32_MS_CLOCK;*/
-	
-	//printf("%d %d %d %d", qr_a0, qr_a1, qr_a2, qr_a3);
-        // send actuator values to ae0..3 QR peripheral regs
-                
-	X32_QR_a0 = qr_a0;
-	//X32_display = qr_a0;
-        X32_QR_a1 = qr_a1;
-        X32_QR_a2 = qr_a2;
-        X32_QR_a3 = qr_a3;
 
-	
-/*	if ((clk % 2000) == 0)*/
-		toggleLED(16+32+64+128);
-/*	else if ((clk % 1000) == 0)*/
-/*		toggleLED(16+32+64);*/
-/*	else if ((clk % 500) == 0)*/
-/*		toggleLED(16+32);*/
-/*	else if ((clk % 250) == 0)*/
-/*		toggleLED(16);*/
-}
 
-void handleMODE (void) {
-	mode = type;
-	switch (mode) 
+
+void handleInput (comm_type type) {
+	switch (type) 
 	{		
+		case RPYL: /* received RPYL info */
+			roll = *data++;
+			pitch = *data++;
+			yaw = *data++;
+			lift = *data;
+			break;
+		case KEYESC: /* ESC: abort / exit */
+			break;
+		case KEYRETURN: /*increment control mode */
+			break;
 		case SAFE: // Safe Mode
-			X32_display=0x1;
-			safe_mode_ctrl();
+			if ((roll==0) && (yaw==0) && (pitch==0) && (lift==0))
+				mode=SAFE;
+			else 
+				printf("Error roll, pitch, yaw and lift not zero, can't switch\n");
 			break;
 		case PANIC: // Panic Mode
-			X32_display=0x2;
-			panic_mode_ctrl();
+			if ((roll==0) && (yaw==0) && (pitch==0) && (lift==0))
+				mode=PANIC;
+			else 
+				printf("Error roll, pitch, yaw and lift not zero, can't switch\n");
 			break;
 		case MANUAL: // Manual Mode
-			X32_display=0x3;
-			manual_mode_ctrl();
+			if ((roll==0) && (yaw==0) && (pitch==0) && (lift==0))
+				mode=MANUAL;
+			else 
+				printf("Error roll, pitch, yaw and lift not zero, can't switch\n");
 			break;
 		case CALIBRATION: // Calibration Mode
-			X32_display=0x4;
-			calibration_mode();
+			if ((roll==0) && (yaw==0) && (pitch==0) && (lift==0))
+				mode=CALIBRATION;
+			else 
+				printf("Error roll, pitch, yaw and lift not zero, can't switch\n");			
 			break;
 		case YAW: // Yaw control Mode
-			X32_display=0x5;
-			yaw_mode_ctrl();
+			if ((roll==0) && (yaw==0) && (pitch==0) && (lift==0))
+				mode=YAW;
+			else 
+				printf("Error roll, pitch, yaw and lift not zero, can't switch\n");
 			break;
 		case FULL: // Full control Mode
-			X32_display=0x6;
-			full_mode_ctrl();
+			if ((roll==0) && (yaw==0) && (pitch==0) && (lift==0))
+				mode=FULL;
+			else 
+				printf("Error roll, pitch, yaw and lift not zero, can't switch\n");
 			break;		
+			
+		/* quad rotor control*/	
+
+		case KEYA: /* increase lift */
+      			break;
+		case KEYZ: /* decrease lift */
+      			break;
+		case KEYRIGHT: /*right arrow: roll down maybe*/
+			break;
+		case KEYLEFT: /*left arrow: roll up maybe*/
+			break;
+		case KEYUP: /*up arrow: pitch down */
+			break;
+		case KEYDOWN: /*down arrow: pitch up */
+			break;
+		case KEYW: /* increase yaw */
+      			break;
+		case KEYQ: /* decrease yaw */
+      			break;
+		case KEYU: /*yaw control P up*/
+			p_yaw++;
+			break;
+		case KEYJ: /*yaw control P down*/
+			p_yaw--;
+			break;
+		case KEYI: /*roll/pitch control P1 up*/
+			break;
+		case KEYK: /*roll/pitch control P1 down*/
+			break;
+		case KEYO: /*roll/pitch control P2 up*/
+			break;
+		case KEYL: /*roll/pitch control P2 down*/
+			break;
 		default:
-			X32_display=0x3333;
 			break;
 	}
 }
 
-void handleRPYL (void) {
-	roll = *data++;
-	pitch = *data++;
-	yaw = *data++;
-	lift = *data;
+
+void handleMode (void) {
+	switch(mode) {
+		case SAFE:
+			safe_mode_ctrl();
+			break;
+		case PANIC:
+			panic_mode_ctrl();
+			break;
+		case MANUAL:
+			manual_mode_ctrl();
+			break;
+		case CALIBRATION:
+			calibration_mode();
+			break;
+		case YAW:
+			yaw_mode_ctrl();
+			break;
+		case FULL:
+			full_mode_ctrl();
+			break;
+		default:
+			break;
+	}
 }
 
 void toggleLED (int x) {
 	X32_leds ^= x;	
 }
 
+
+
+void isr_timer(void)
+{
+	
+	//printf("%d %d %d %d", oo1, oo2, oo3, oo4);
+        /* send actuator values to ae0..3 QR peripheral regs
+         */
+
+/*	if (oo1<0) oo1=0;*/
+/*	if (oo2<0) oo2=0;*/
+/*	if (oo3<0) oo3=0;*/
+/*	if (oo4<0) oo4=0;*/
+        
+	X32_QR_a0 = oo1;
+	//X32_display = oo1;
+        X32_QR_a1 = oo2;
+        X32_QR_a2 = oo3;
+        X32_QR_a3 = oo4;
+}
+
+
+ /*------------------------------------------------------------------
+ * isr_qr_link -- QR link rx interrupt handler
+ *------------------------------------------------------------------
+ */
+void isr_qr_link(void)
+{
+	/* get sensor and timestamp values
+	 */
+	s0 = X32_QR_s0; s1 = X32_QR_s1; s2 = X32_QR_s2; 
+	s3 = X32_QR_s3; s4 = X32_QR_s4; s5 = X32_QR_s5;
+}

@@ -7,5 +7,5 @@
 
 void panic_mode_ctrl(void)
 {
-
+	mode=SAFE;
 }

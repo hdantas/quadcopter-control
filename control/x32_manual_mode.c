@@ -21,9 +21,15 @@ void manual_mode_ctrl(void)
 		if (lift < MIN_LIFT) lift = MIN_LIFT;
 		if (lift > MAX_LIFT) lift = MAX_LIFT;
 		
-		qr_a0 = (lift + 2 * pitch - yaw) / 4;
-		qr_a1 = (lift - 2 * roll + yaw) / 4;
-		qr_a2 = (lift - 2 * pitch - yaw) / 4;
-		qr_a3 = (lift + 2 * roll + yaw) / 4;
+		
+		oo1 = (lift + 2 * pitch - yaw) / 4;
+		oo2 = (lift - 2 * roll + yaw) / 4;
+		oo3 = (lift - 2 * pitch - yaw) / 4;
+		oo4 = (lift + 2 * roll + yaw) / 4;
+
+/*		if ((oo1old!=oo1)||(oo2old!=oo2)||(oo3old!=oo3)||(oo4old!=oo4))*/
+/*			printf("oo1: %d oo2: %d oo3: %d oo4: %d\n", oo1, oo2, oo3, oo4);*/
+		
+		return;
 }
 

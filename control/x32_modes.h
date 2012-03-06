@@ -31,6 +31,7 @@
 
 //functions
 void isr_timer(void);
+void isr_qr_link(void);
 void safe_mode_ctrl(void);
 void panic_mode_ctrl(void);
 void manual_mode_ctrl(void);
@@ -38,13 +39,16 @@ void calibration_mode(void);
 void yaw_mode_ctrl(void);
 void full_mode_ctrl(void);
 void init_state(void);
-void handleMODE (void);
-void handleRPYL (void);
+void handleMode (void);
+void handleInput (comm_type type);
 
 //variables
 extern int lift, roll, pitch, yaw;
-extern int qr_a0, qr_a1, qr_a2, qr_a3;
+extern int oo1, oo2, oo3, oo4;
+extern int s0, s1, s2, s3, s4, s5;
+extern int p_yaw;
 extern comm_type mode, type;
 extern volatile int finished;
+extern int yaw_error;
 
 #endif

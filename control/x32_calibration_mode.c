@@ -7,5 +7,5 @@
 
 void calibration_mode(void)
 {
-
+	mode=SAFE;
 }
