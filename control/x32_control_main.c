@@ -3,7 +3,7 @@
 
 #include "x32_common.h"
 #include "comm.h"
-#include "modes_x32.h"
+#include "x32_modes.h"
 
 void toggleLED (int x);
 
@@ -38,7 +38,7 @@ void main(void) {
 	//number of sensors 6 + state battery = 7 values
  
         // prepare timer interrupt for 500 Hz engine control (i.e., 5 ms)
-        X32_timer_per = 2 * CLOCKS_PER_MS;         
+        X32_timer_per = 20 * CLOCKS_PER_MS;         
 /*        X32_timer_per = 2 * CLOCKS_PER_MS;*/
         SET_INTERRUPT_VECTOR(INTERRUPT_TIMER1, &isr_timer);
         SET_INTERRUPT_PRIORITY(INTERRUPT_TIMER1, 5);
@@ -65,9 +65,9 @@ void main(void) {
 		if ( result == 1) {
 			type = FULL;
 			X32_display = len;
-			toggleLED(0x04);
+			//toggleLED(0x04);
 			if (type == FULL) {
-				toggleLED(0x08);
+/*				toggleLED(0x08);*/
 				handleMODE();
 			}
 			else if (len==4 && type==RPYL)
@@ -90,7 +90,7 @@ void init_state(void)
 
 void isr_timer(void)
 {
-	int clk = X32_MS_CLOCK;
+/*	int clk = X32_MS_CLOCK;*/
 	
 	//printf("%d %d %d %d", qr_a0, qr_a1, qr_a2, qr_a3);
         // send actuator values to ae0..3 QR peripheral regs
@@ -102,14 +102,14 @@ void isr_timer(void)
         X32_QR_a3 = qr_a3;
 
 	
-	if ((clk % 8000) == 0)
+/*	if ((clk % 2000) == 0)*/
 		toggleLED(16+32+64+128);
-	else if ((clk % 2000) == 0)
-		toggleLED(16+32+64);
-	else if ((clk % 500) == 0)
-		toggleLED(16+32);
-	else if ((clk % 125) == 0)
-		toggleLED(16);
+/*	else if ((clk % 1000) == 0)*/
+/*		toggleLED(16+32+64);*/
+/*	else if ((clk % 500) == 0)*/
+/*		toggleLED(16+32);*/
+/*	else if ((clk % 250) == 0)*/
+/*		toggleLED(16);*/
 }
 
 void handleMODE (void) {

@@ -1,5 +1,5 @@
-#ifndef _LINUX_JOYSTICK_H
-#define _LINUX_JOYSTICK_H
+#ifndef _JOYSTICK_H
+#define _JOYSTICK_H
 
 /*
  * $Id: joystick.h,v 1.4 2001/04/24 07:06:43 vojtech Exp $
@@ -125,4 +125,16 @@ struct JS_DATA_SAVE_TYPE {
 	struct JS_DATA_TYPE JS_CORR;
 };
 
-#endif /* _LINUX_JOYSTICK_H */
+extern struct termios 	savetty;
+
+extern int fd_JOY;
+extern unsigned char axes;	//number of axes	
+extern unsigned char buttons;	//number of buttons
+extern int *axis;		//vector for axes values
+extern char *button;		//vector for button value
+
+int joy_open(void);
+int joy_close(void);
+int read_joy();
+
+#endif /* _JOYSTICK_H */

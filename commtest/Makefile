@@ -1,4 +1,3 @@
-#VPATH = commtest:control
 
 #     foo.o : foo.c defs.h hack.h
 #             cc -c $(CFLAGS) $^ -o $@
@@ -8,7 +7,13 @@
 # $^ : The names of all the prerequisites, with spaces between them
 
 #######################  COMMUNICATION  #######################	
-PCSOURCES = main.c serial.c log.c comm.c checksum.c convert.c
+INCLUDE_DIRECTORIES = ../commtest ../control ../inputPC
+GCCDIR += $(addprefix -I ,$(INCLUDE_DIRECTORIES))
+
+vpath %.h $(INCLUDE_DIRECTORIES)
+vpath %.c $(INCLUDE_DIRECTORIES)
+
+PCSOURCES = comm_main.c serial.c log.c comm.c checksum.c convert.c console_IO.c joy_function.c
 PCOBJECTS = $(PCSOURCES:.c=.o)
 
 X32SOURCES = x32_main.c x32_serial.c x32_log.c comm.c checksum.c convert.c
@@ -22,7 +27,7 @@ qr: qr_ qrcomm
 	
 
 pc_ : $(PCSOURCES)
-	gcc -c $(PCSOURCES) -Wall
+	gcc -c $^ -Wall $(GCCDIR)
 	
 pccomm : $(PCOBJECTS)
 	gcc -o pccomm $^ -Wall

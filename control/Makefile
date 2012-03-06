@@ -6,14 +6,19 @@
 # $^ : The names of all the prerequisites, with spaces between the
 
 #######################  CONTROL  #######################
-VPATH = ../commtest/
+INCLUDE_DIRECTORIES = ../commtest ../control ../inputPC
+GCCDIR += $(addprefix -I ,$(INCLUDE_DIRECTORIES))
 
-PCSOURCES = mode_main.c serial.c log.c comm.c checksum.c convert.c
+vpath %.h $(INCLUDE_DIRECTORIES)
+vpath %.c $(INCLUDE_DIRECTORIES)
+
+
+PCSOURCES = control_main.c serial.c log.c comm.c checksum.c convert.c console_IO.c joy_function.c
 PCOBJECTS = $(PCSOURCES:.c=.o)
 
-X32SOURCES = mode_main_x32.c x32_serial.c x32_log.c comm.c checksum.c \
-	     convert.c manual_mode_x32.c full_mode_x32.c \
-	     calibration_mode_x32.c panic_mode_x32.c safe_mode_x32.c yaw_mode_x32.c
+X32SOURCES = x32_control_main.c x32_serial.c x32_log.c comm.c checksum.c \
+	     convert.c x32_manual_mode.c x32_full_mode.c \
+	     x32_calibration_mode.c x32_panic_mode.c x32_safe_mode.c x32_yaw_mode.c
 X32OBJECTS = $(X32SOURCES:.c=.co)
 
 
@@ -25,7 +30,7 @@ pc: pc_ pccontrol
 qr: qr_ qrcontrol
 
 pc_: $(PCSOURCES)
-	gcc -c $^ -I../commtest -Wall
+	gcc -c $^ $(GCCDIR)
 	
 pccontrol: $(PCOBJECTS)
 	gcc -o pccontrol $^ -Wall

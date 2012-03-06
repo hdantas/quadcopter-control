@@ -3,9 +3,9 @@
 
 #include "x32_common.h"
 #include "comm.h"
-#include "modes_x32.h"
+#include "x32_modes.h"
 
-void panic_mode_ctrl(void)
+void yaw_mode_ctrl()
 {
 
 }
