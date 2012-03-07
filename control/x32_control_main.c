@@ -39,14 +39,16 @@ void main(void) {
 	//number of sensors 6 + state battery = 7 values
  
         // prepare timer interrupt for 500 Hz engine control (i.e., 5 ms)
-        X32_timer_per = 20 * CLOCKS_PER_MS;         
+        X32_timer_per = 1 * CLOCKS_PER_MS;         
 /*        X32_timer_per = 2 * CLOCKS_PER_MS;*/
         SET_INTERRUPT_VECTOR(INTERRUPT_TIMER1, &isr_timer);
         SET_INTERRUPT_PRIORITY(INTERRUPT_TIMER1, 5);
         ENABLE_INTERRUPT(INTERRUPT_TIMER1);
 
 	init_state();
-
+	mode = PANIC; //override init state
+	oo1 = 1000;
+	
 	//Initialise communication
 	if (0 != comm_init())
 		return;
@@ -56,7 +58,7 @@ void main(void) {
 	finished=0;	
 
 	X32_leds =0x1;
-	X32_display=0x1234;
+	X32_display=oo1;
 	//Wait until data can be received
 	while (!finished)
 	{	
@@ -66,7 +68,11 @@ void main(void) {
 			handleInput(type);
 			free(data);
 		}
-		handleMode();
+	        if (X32_ms_clock % 500 == 0) {
+		        toggleLED(128);
+			handleMode();
+	        	X32_display = oo1;
+        	}
 	}
 	//Uninitialise
 	comm_uninit();

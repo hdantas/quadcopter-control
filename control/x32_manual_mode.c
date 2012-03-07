@@ -30,6 +30,5 @@ void manual_mode_ctrl(void)
 /*		if ((oo1old!=oo1)||(oo2old!=oo2)||(oo3old!=oo3)||(oo4old!=oo4))*/
 /*			printf("oo1: %d oo2: %d oo3: %d oo4: %d\n", oo1, oo2, oo3, oo4);*/
 		
-		return;
 }
 

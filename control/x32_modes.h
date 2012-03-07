@@ -28,6 +28,16 @@
 #define MAX_YAW 64
 #define MIN_YAW -64
 
+//rates for decreasing motor RPM and minimum value for motor RPM for panic mode
+#define MIN_MOTOR1 20
+#define MIN_MOTOR2 20
+#define MIN_MOTOR3 20
+#define MIN_MOTOR4 20
+#define REDUCING_RPM1 5
+#define REDUCING_RPM2 5
+#define REDUCING_RPM3 5
+#define REDUCING_RPM4 5
+
 
 //functions
 void isr_timer(void);
