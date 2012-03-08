@@ -27,7 +27,7 @@ void main(void) {
 	peripherals[PERIPHERAL_LEDS] |= STATUS_LED;
 
 	log_msg("QR is ready to receive data...");
-
+	peripherals[PERIPHERAL_LEDS]=0;
 	//Loop infinitely
 	while (1) {
 		//Receive data (make non-blocking blocking)
@@ -41,16 +41,17 @@ void main(void) {
 			//Send logfile
 			peripherals[PERIPHERAL_LEDS] |= 0x80;
 			log_transmit();
-			peripherals[PERIPHERAL_LEDS] &= 0x7F;
+			peripherals[PERIPHERAL_LEDS] |= 0x40;
 		} else {
 			//Send it back
 //			send_data(type, data, len);
 			log_msg("The quick brown fox jumps over the lazy dog.");
 		}
+		peripherals[PERIPHERAL_LEDS] |= 0x20;
 		//Free buffer memory again (IMPORTANT!)
 		free(data);
 	}
-
+	peripherals[PERIPHERAL_LEDS] |= 0xFF;
 	//Uninitialise
 	comm_uninit();
 
