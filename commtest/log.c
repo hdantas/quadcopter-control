@@ -5,8 +5,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
-#define FILENAME_LOG_RAW	"log.raw"
+#define FILENAME_LOG_RAW	"log.bin"
 #define FILENAME_LOG_PARSED "log.txt"
 
 /*
@@ -25,38 +26,54 @@ void log_byte(unsigned char c) {
 void log_data(log_type type, unsigned char* data, int len) {
 	//Declare Variables
 	int I;
-
+	
 	printf("Log data: %i\t", type);
 	for (I = 0; I < len; I++)
 		printf("%.02X ", data[I]);
 	printf("\n");
-
+	
 
 }
 void log_msg(const char* msg) {
 	printf("Log message: %s\n", msg);
 }
 
+/*
+	Retrieves logfile from QR and stores on disk in binary format
+	Blocking and ugly
+*/
 void retrieve_log() {
 	//Declare Variables
+	int result;
 	comm_type type;
 	unsigned char* data;
 	int len;
+	
 	int logsize;
 	unsigned char* logfile;
 	int logindex;
-	int value;
+	
+	unsigned char* intbuffer;
+	int intbufferlen;
+	
 	unsigned char buffer[CHUNK_SIZE_8BIT];
+	
+	FILE* fh;
+	int I;
 	
 
 	//Send logfile request
-	if (0 != send_data(REQLOG, 0, 0)) {
+	if (0 != send_data(REQ_LOG, 0, 0)) {
 		printf("Error sending log request\n");
 		return;
 	}
+	
+	printf("Waiting for logfile size\n");
 
 	//Wait for logfile size
 	while (0 == recv_data(&type, &data, &len));
+	
+	printf("Received logfile size\n");
 
 	if (type != LOG_SIZE) {
 		printf("Invalid response to logfile request: %i\n", type);
@@ -65,43 +82,62 @@ void retrieve_log() {
 	}
 
 	//Create logfile
-	logsize = convert7to8bitint(make_int(data));
+	logsize = make_int_swap(data);
 	free(data);
 
 	printf("Log size: %i\n", logsize);
+	
 	logfile = malloc(logsize);
+	
+	
 
 	//Retrieve chunk after chunk
-	for (logindex = 0; logindex < logsize; logindex += CHUNK_SIZE_8BIT) {
-		//Convert value to other endianness and compress
-		value = other_endian(convert8to7bitint(logindex));
+	for (logindex = 0; logindex < logsize; logindex += 2*CHUNK_SIZE_8BIT) {
+		printf("Requesting chunk %i...\n", logindex);
+		
+		//Prepare integer
+		make_int_sendable_swap(logindex, &intbuffer, &intbufferlen);
 		
 		//Request chunk
-		if (0 != send_data(REQ_LOG_CHUNK, (unsigned char*) &value, 4)) {
+		if (0 != send_data(REQ_LOG_CHUNK, intbuffer, intbufferlen)) {
 			printf("Error sending log chunk request\n");
 			return;
 		}
+		//Free memory from make_sendable_int_swap 
+		free(intbuffer);
 
 		//Block and wait
-		while (0 == recv_data(&type, &data, &len));
+		while (1) {
+			result = recv_data(&type, &data, &len);
+			if (result == 1) {
 
-		if (type != LOG_CHUNK) {
-			printf("Invalid response to logfile chunk request: %i\n", type);
-			free(data);
-			return;
+				if (type == DEBUG_INT) {
+					printf("DEBUG_INT\n");
+		
+				} else if (type != LOG_CHUNK) {
+					printf("Invalid response to logfile chunk request: %i\n", type);
+					free(data);
+					return;
+				} else {
+					break;
+				}
+			} else if (result == -1) {
+				printf("ERROR!\n");
+				return;
+			}
 		}
 
 		//Convert
-		convert7to8bitchunk(data, buffer);
+		convert7to8bitchunk(data, len, buffer);
 		free(data);
-		
+	
 		//Copy to logfile structure
-		if (logsize-logindex < CHUNK_SIZE_8BIT) {
+		if (logsize-logindex < 2*CHUNK_SIZE_8BIT) {
 			memcpy(&logfile[logindex], buffer, logsize-logindex);
 			printf("Done!\n");
 			break;
 		} else {
-			memcpy(&logfile[logindex], buffer, CHUNK_SIZE_8BIT);
+			memcpy(&logfile[logindex], buffer, 2*CHUNK_SIZE_8BIT);
 		}
 	}
 
@@ -109,12 +145,38 @@ void retrieve_log() {
 	printf("Successfully acquired logfile\n");
 
 	//Parse it
-	parse_log(logfile, logsize);
+//	parse_log(logfile, logsize);
 
+
+	//Output raw logfile to file
+	fh = fopen(FILENAME_LOG_RAW, "w");
+	if (fh == 0) {
+		printf("Error opening %s.\n", FILENAME_LOG_RAW);
+		return;
+	}
+	//TODO:Limit write chunk size
+	if (0 == fwrite(logfile, 1, logsize, fh)) {
+		printf("Error writing to file.\n");
+		return;
+	}
+	fclose(fh);
+/*	
+	//Print logfile
+	printf("Logfile:");
+	for (I = 0; I < logsize; I++) {
+		if (I % 16 == 0)
+			printf("\n%.04X:\t", I);
+		printf("%.02X ", logfile[I]);
+	}
+	printf("\n\n");
+*/
 	//Free memory
 	free(logfile);
 }
 
+/*
+	Translates binary logfile into human-readable format
+*/
 void parse_log(unsigned char* logfile, int logsize) {
 	//Declare Variables
 	int logindex;
@@ -127,26 +189,7 @@ void parse_log(unsigned char* logfile, int logsize) {
 	unsigned char outputstr[512];
 	int value;
 
-	//Print logfile
-	printf("Logfile:");
-	for (I = 0; I < logsize; I++) {
-		if (I % 16 == 0)
-			printf("\n%.04X:\t", I);
-		printf("%.02X ", logfile[I]);
-	}
-	printf("\n\n");
-
-	//Output raw logfile to file
-	fh = fopen(FILENAME_LOG_RAW, "w");
-	if (fh == 0) {
-		printf("Error opening %s.\n", FILENAME_LOG_RAW);
-		return;
-	}
-	if (0 == fwrite(logfile, 1, logsize, fh)) {
-		printf("Error writing to file.\n");
-		return;
-	}
-	fclose(fh);
+	
 
 	//Open file for parsed log
 	fh = fopen(FILENAME_LOG_PARSED, "w");
@@ -222,6 +265,11 @@ void parse_log(unsigned char* logfile, int logsize) {
 
 	//Close file
 	fclose(fh);
+	
+	//Send and acknowledgement
+	if (0 != send_data(ACK, 0, 0))
+		//TODO: 
+		return;
 }
 
 const char* logtype_to_string(log_type type) {

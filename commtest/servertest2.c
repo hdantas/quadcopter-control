@@ -7,7 +7,7 @@
 
 #include "log.h"
 
-#define LOGFILE_LEN		0xFFFF
+#define LOGFILE_LEN		0x00FF
 
 unsigned char logfile[LOGFILE_LEN];
 int logindex = LOGFILE_LEN;

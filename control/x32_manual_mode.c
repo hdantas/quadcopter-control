@@ -12,15 +12,7 @@ In manual mode (mode 2) the ES simply passes on lift, roll, pitch, and yaw
 void manual_mode_ctrl(void)
 {
 		
-		if (roll > MAX_ROLL) roll = MAX_ROLL;
-		if (roll < MIN_ROLL) roll = MIN_ROLL;
-		if (pitch < MIN_PITCH) lift = MIN_PITCH;
-		if (pitch > MAX_PITCH) lift = MAX_PITCH;		
-		if (yaw > MAX_YAW) yaw = MAX_YAW;
-		if (yaw < MIN_YAW) yaw = MIN_YAW;
-		if (lift < MIN_LIFT) lift = MIN_LIFT;
-		if (lift > MAX_LIFT) lift = MAX_LIFT;
-		
+		clip_RPYL(&roll, &pitch, &yaw, &lift, 100);		
 		
 		oo1 = (lift + 2 * pitch - yaw) / 4;
 		oo2 = (lift - 2 * roll + yaw) / 4;

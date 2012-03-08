@@ -17,7 +17,8 @@
 #define X32_QR_s5 		peripherals[PERIPHERAL_XUFO_S5]
 #define X32_QR_timestamp 	peripherals[PERIPHERAL_XUFO_TIMESTAMP]
 #define X32_display		peripherals[PERIPHERAL_DISPLAY]
-
+#define SCALE_AE 12
+#define MAX_AE 1023
 //max and min values for motors
 #define MAX_LIFT 0
 #define MIN_LIFT 128
@@ -33,10 +34,10 @@
 #define MIN_MOTOR2 20
 #define MIN_MOTOR3 20
 #define MIN_MOTOR4 20
-#define REDUCING_RPM1 5
-#define REDUCING_RPM2 5
-#define REDUCING_RPM3 5
-#define REDUCING_RPM4 5
+#define REDUCING_RPM1 1
+#define REDUCING_RPM2 1
+#define REDUCING_RPM3 1
+#define REDUCING_RPM4 1
 
 
 //functions
@@ -51,6 +52,8 @@ void full_mode_ctrl(void);
 void init_state(void);
 void handleMode (void);
 void handleInput (comm_type type);
+void init_state(void);
+void clip_RPYL(int *roll, int *pitch, int *yaw, int *lift, int limit_rate);
 
 //variables
 extern int lift, roll, pitch, yaw;

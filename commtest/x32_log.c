@@ -9,6 +9,7 @@
 
 #define X32_ms_clock		peripherals[PERIPHERAL_MS_CLOCK]
 #define X32_int_enable		peripherals[PERIPHERAL_INT_ENABLE]
+#define X32_leds			peripherals[PERIPHERAL_LEDS]
 
 
 //Global log file (64kB)
@@ -17,6 +18,9 @@ unsigned char logfile[LOG_FILE_SIZE];
 int logindex;
 char logflag;
 
+/*
+	Start logging
+*/
 void log_start() {
 	//Initialize
 	logindex = 0;
@@ -25,6 +29,9 @@ void log_start() {
 	//Log first event
 	log_event(LOG_START);
 }
+/*
+	Stop logging
+*/
 void log_stop() {
 	//Log last event
 	log_event(LOG_STOP);
@@ -32,6 +39,13 @@ void log_stop() {
 	logflag = 0;
 }
 
+/*
+	Apply changes to the logfile
+	Input:
+		type	type of log entry (see log.h)
+		data	data buffer
+		len		length of data in buffer
+*/
 //TODO: Inline possible?
 void write_to_log(log_type type, unsigned char* data, int len) {
 	//Declare Variables
@@ -71,6 +85,9 @@ void write_to_log(log_type type, unsigned char* data, int len) {
 		ENABLE_INTERRUPT(INTERRUPT_GLOBAL);
 }
 
+/*
+	Shorthand to log a string
+*/
 void log_msg(const char* msg) {
 	//Declare Variables
 	int len;
@@ -92,6 +109,9 @@ void log_msg(const char* msg) {
 	//Free memory
 	free(data);
 }
+/*
+	Shorthand to log binary data
+*/
 void log_data(log_type type, unsigned char* data, int len) {
 	//Declare Variables
 	unsigned char* buffer;
@@ -108,30 +128,43 @@ void log_data(log_type type, unsigned char* data, int len) {
 	free(buffer);
 }
 /*
-	These functions were replaced by macros
+	Shorthand to log an event (w/o data)
 */
 void log_event(log_type event) {
 	//Write to log
 	write_to_log(event, 0, 0);
 }
+/*
+	Shorthand to log an integer value directly
+*/
 void log_int(int value) {
 	//Write to log
 	write_to_log(LOG_INT, (unsigned char*) &value, 4);
 }
+/*
+	Shorthand to log a single byte directly
+*/
 void log_byte(unsigned char c) {
 	//Write to log
 	write_to_log(LOG_BYTE, &c, 1);
 }
 
-
+/*
+	Transmits the logfile over the serial link. Should be called upon receipt of REQ_LOG packet.
+	Blocking and ugly.
+*/
 void log_transmit() {
 	//Declare Variables
 	unsigned char c;
 	comm_type type;
 	unsigned char* data;
 	int len;
+	
+	unsigned char* intbuffer;
+	int intbufferlen;
+	
 	int index;
-	unsigned char buffer[CHUNK_SIZE_7BIT];
+	unsigned char buffer[2*CHUNK_SIZE_7BIT];
 
 	//Log a transmit event
 	log_event(LOG_TRANSMIT);
@@ -139,13 +172,19 @@ void log_transmit() {
 	//Stop logging to prevent logfile corruption
 	log_event(LOG_STOP);
 	logflag = 0;
+	
+	X32_leds |= 0x40;
 
 	//Send logfile size to sendable format
-	len = convert8to7bitint(logindex);
+	make_int_sendable(logindex, &intbuffer, &intbufferlen);
 
-	if (0 != send_data(LOG_SIZE, (unsigned char*) &len, 4)) {
+	if (0 != send_data(LOG_SIZE, intbuffer, intbufferlen)) {
 		//TODO: Handle error
+		
+		free(intbuffer);
 		return;
+	} else {
+		free(intbuffer);
 	}
 
 	//TODO: Make this fancier
@@ -162,21 +201,20 @@ void log_transmit() {
 			break;
 		}
 
-		//Convert parameter to integer
-		memcpy(&index, data, 4);
-		index = convert7to8bitint(index);
+		//Retrieve index from data
+		index = make_int(data);
 
 		//Free allocated memory from recv_data
 		free(data);
 
 		//Convert specific chunk to communicable format
-		if (logindex - index > CHUNK_SIZE_8BIT)
-			convert8to7bitchunk(&logfile[index], CHUNK_SIZE_8BIT, buffer);
+		if (logindex - index > 2*CHUNK_SIZE_8BIT)
+			convert8to7bitchunk(&logfile[index], 2*CHUNK_SIZE_8BIT, buffer);
 		else
 			convert8to7bitchunk(&logfile[index], logindex - index, buffer);
 
 		//Send the chunk
-		if (0 != send_data(LOG_CHUNK, buffer, CHUNK_SIZE_7BIT)) {
+		if (0 != send_data(LOG_CHUNK, buffer, 2*CHUNK_SIZE_7BIT)) {
 			//TODO: Handle error
 			break;
 		}

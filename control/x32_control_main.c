@@ -46,8 +46,7 @@ void main(void) {
         ENABLE_INTERRUPT(INTERRUPT_TIMER1);
 
 	init_state();
-	mode = PANIC; //override init state
-	oo1 = 1000;
+
 	
 	//Initialise communication
 	if (0 != comm_init())
@@ -83,7 +82,9 @@ void init_state(void)
 {
 	lift = roll = pitch = yaw = 0;
 	oo1 = oo2 = oo3 = oo4 = 0;
-	p_yaw=0;
+	p_yaw=30;
+	s0 = s1 = s2 = s3 = s4 = s5 = 0;
+	s0_bias = s1_bias = s2_bias = s3_bias = s4_bias = s5_bias = 0;
 	mode = SAFE; //starts in safe mode
 }
 
@@ -240,3 +241,26 @@ void isr_qr_link(void)
 	s0 = X32_QR_s0; s1 = X32_QR_s1; s2 = X32_QR_s2; 
 	s3 = X32_QR_s3; s4 = X32_QR_s4; s5 = X32_QR_s5;
 }
+
+void clip_RPYL(int *roll, int *pitch, int *yaw, int *lift, int limit_rate)
+{
+	if(*roll>(oldroll+limit_rate))
+		*roll=oldroll+limit_rate;
+	if(*roll<(oldroll-limit_rate))
+		*roll=oldroll-limit_rate;
+
+	if(*pitch>(oldpitch+limit_rate))
+		*pitch=oldpitch+limit_rate;
+	if(*pitch<(oldpitch-limit_rate))
+		*pitch=oldpitch-limit_rate;
+
+	if(*yaw>(oldyaw+limit_rate))
+		*yaw=oldyaw+limit_rate;
+	if(*yaw<(oldyaw-limit_rate))
+		*yaw=oldyaw-limit_rate;
+
+	if(*lift>(oldlift+limit_rate))
+		*lift=oldlift+limit_rate;
+	if(*lift<(oldlift-limit_rate))
+		*lift=oldlift-limit_rate;
+}s

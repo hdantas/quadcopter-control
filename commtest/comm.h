@@ -4,7 +4,8 @@
 //Packet types
 #define COMM_TYPE_SIZE_0	0
 #define COMM_TYPE_SIZE_1	32
-#define COMM_TYPE_SIZE_4	48
+#define COMM_TYPE_SIZE_4	40
+#define COMM_TYPE_SIZE_8	50
 #define	COMM_TYPE_SIZE_16	60
 #define	COMM_TYPE_SIZE_VAR	63
 
@@ -48,10 +49,13 @@ typedef enum {
 	MODE			= COMM_TYPE_SIZE_1,
 
 	RPYL 			= COMM_TYPE_SIZE_4,			//4-byte sized body
+	
+	LOG_SIZE		= COMM_TYPE_SIZE_8,			//8-byte sized body
 	REQ_LOG_CHUNK,
 	LOG_SIZE,
+	DEBUG_INT,
 
-	LOG_CHUNK 		= COMM_TYPE_SIZE_16,		//16-byte sized body
+	LOG_CHUNK	 	= COMM_TYPE_SIZE_16,		//16-byte sized body
 
 	RANDOM_DATA		= COMM_TYPE_SIZE_VAR		//variable sized body
 } comm_type;
