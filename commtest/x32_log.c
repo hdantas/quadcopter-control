@@ -9,7 +9,7 @@
 
 #define X32_ms_clock		peripherals[PERIPHERAL_MS_CLOCK]
 #define X32_int_enable		peripherals[PERIPHERAL_INT_ENABLE]
-
+#define X32_display		peripherals[PERIPHERAL_DISPLAY]
 
 //Global log file (64kB)
 #define LOG_FILE_SIZE	0xFFFF
@@ -150,11 +150,12 @@ void log_transmit() {
 
 	//TODO: Make this fancier
 	//Send entire logfile in a blocking fashion
-
+	X32_display = 0x1111;
 	//Wait for data
 	while (1) {
 		//Receive request
 		while (0 == recv_data(&type, &data, &len));
+		X32_display = 0x2222;
 		
 		//Check for log chunk request
 		if (type != REQ_LOG_CHUNK) {
@@ -181,7 +182,7 @@ void log_transmit() {
 			break;
 		}
 	}
-
+	X32_display = 0x3333;
 	//Reactivate log
 	logflag = 1;
 	log_event(LOG_START);

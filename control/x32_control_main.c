@@ -46,8 +46,6 @@ void main(void) {
         ENABLE_INTERRUPT(INTERRUPT_TIMER1);
 
 	init_state();
-	mode = PANIC; //override init state
-	oo1 = 1000;
 	
 	//Initialise communication
 	if (0 != comm_init())
