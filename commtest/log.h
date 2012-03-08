@@ -36,6 +36,8 @@ void log_msg(const char* msg);
 void log_event(log_type event);
 void log_int(int value);
 void log_byte(unsigned char c);
-
+void retrieve_log();
+void parse_log(unsigned char* logfile, int logsize);
+const char* logtype_to_string(log_type type);
 
 #endif
