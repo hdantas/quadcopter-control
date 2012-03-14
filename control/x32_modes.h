@@ -19,25 +19,41 @@
 #define X32_display		peripherals[PERIPHERAL_DISPLAY]
 #define SCALE_AE 12
 #define MAX_AE 1023
+
 //max and min values for motors
-#define MAX_LIFT 0
+
+#define MAX_LIFT 128
+#define MAX_ROLL -64
+#define MAX_PITCH -64
+#define MAX_YAW -64
+
 #define MIN_LIFT 128
-#define MAX_ROLL 64
 #define MIN_ROLL -64
-#define MAX_PITCH 64
 #define MIN_PITCH -64
-#define MAX_YAW 64
 #define MIN_YAW -64
 
+#define MAX_MOTOR1 200
+#define MAX_MOTOR2 200
+#define MAX_MOTOR3 200
+#define MAX_MOTOR4 200
+
+#define MIN_MOTOR1 0
+#define MIN_MOTOR2 0
+#define MIN_MOTOR3 0
+#define MIN_MOTOR4 0
+
+
+#define INITIAL_P_YAW 30
+#define INITIAL_P1 30
+#define INITIAL_P2 30
+#define INITIAL_MODE SAFE
+
 //rates for decreasing motor RPM and minimum value for motor RPM for panic mode
-#define MIN_MOTOR1 20
-#define MIN_MOTOR2 20
-#define MIN_MOTOR3 20
-#define MIN_MOTOR4 20
-#define REDUCING_RPM1 1
-#define REDUCING_RPM2 1
-#define REDUCING_RPM3 1
-#define REDUCING_RPM4 1
+
+#define REDUCING_ROLL 1
+#define REDUCING_PITCH 1
+#define REDUCING_YAW 1
+#define REDUCING_LIFT 1
 
 
 //functions
@@ -51,17 +67,19 @@ void yaw_mode_ctrl(void);
 void full_mode_ctrl(void);
 void init_state(void);
 void handleMode (void);
-void handleInput (comm_type type);
+void handleInput (void);
 void init_state(void);
-void clip_RPYL(int *roll, int *pitch, int *yaw, int *lift, int limit_rate);
+void clip_RPYL(void);
+void compute_RPMs(void);
+
 
 //variables
+extern comm_type mode, type;
 extern int lift, roll, pitch, yaw;
 extern int oo1, oo2, oo3, oo4;
 extern int s0, s1, s2, s3, s4, s5;
+extern int s0_bias, s1_bias, s2_bias, s3_bias, s4_bias, s5_bias;
 extern int p_yaw;
-extern comm_type mode, type;
 extern volatile int finished;
-extern int yaw_error;
 
 #endif

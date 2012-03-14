@@ -37,7 +37,7 @@ void main(void) {
 			//Done
 			free(data);
 			break;
-		} else if (type == REQLOG) {
+		} else if (type == REQ_LOG) {
 			//Send logfile
 			peripherals[PERIPHERAL_LEDS] |= 0x80;
 			log_transmit();

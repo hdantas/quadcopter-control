@@ -7,5 +7,6 @@
 
 void full_mode_ctrl(void)
 {
-	mode=SAFE;
+	//K_s = P1 * (roll_s - sphi) - P2 * sp;
+
 }

@@ -34,7 +34,7 @@ typedef enum {
 	KEYDOWN,
 	KEYESC,
 	KEYRETURN,
-	REQLOG,
+	REQ_LOG,
 
 	// Modes
 	SAFE,
@@ -52,7 +52,6 @@ typedef enum {
 	
 	LOG_SIZE		= COMM_TYPE_SIZE_8,			//8-byte sized body
 	REQ_LOG_CHUNK,
-	LOG_SIZE,
 	DEBUG_INT,
 
 	LOG_CHUNK	 	= COMM_TYPE_SIZE_16,		//16-byte sized body

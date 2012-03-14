@@ -5,49 +5,35 @@
 #include "comm.h"
 #include "x32_modes.h"
 
-void toggleLED (int x);
-
-int kb_lift, kb_yaw, kb_pitch, kb_roll;
-int js_lift, js_yaw, js_pitch, js_roll;
+/*int kb_lift, kb_yaw, kb_pitch, kb_roll;*/
+/*int js_lift, js_yaw, js_pitch, js_roll;*/
 int lift, roll, pitch, yaw;
-int qr_a0, qr_a1, qr_a2, qr_a3;
 comm_type mode, type;
 volatile int finished;
 
 int oo1, oo2, oo3, oo4;
 int s0, s1, s2, s3, s4, s5, timestamp;
+int s0_bias, s1_bias, s2_bias, s3_bias, s4_bias, s5_bias;
 int p_yaw, yaw_error;
 
 unsigned char* data;
 int len;
 
 void main(void) {
-	//Declare variables
-	int result=0;
-
-	// prepare QR rx interrupt handler and associated variables
-	 
-        SET_INTERRUPT_VECTOR(INTERRUPT_XUFO, &isr_qr_link);
-        SET_INTERRUPT_PRIORITY(INTERRUPT_XUFO, 21);
-        ENABLE_INTERRUPT(INTERRUPT_XUFO);
-
-	//An interrupt is raised (INTERRUPT_XUFO) once the 7 new values are
-	//available to the X32. As an additional feature, there is also a counter register (PERIPHERAL_XUFO_COUNT) that
-	//holds the number of times a 7-value frame has been received (every 1/(1,270) ≈ 0.7 ms). In order to facilitate
-	//accurate sensor data logging, the counter register PERIPHERAL_XUFO_TIMESTAMP holds the 32 bit timestamp of
-	//the last received sensor data frame (in units of 20 ns, based on the X32’s 50 MHz clock).
-	//number of sensors 6 + state battery = 7 values
- 
-        // prepare timer interrupt for 500 Hz engine control (i.e., 5 ms)
-        X32_timer_per = 1 * CLOCKS_PER_MS;         
-/*        X32_timer_per = 2 * CLOCKS_PER_MS;*/
-        SET_INTERRUPT_VECTOR(INTERRUPT_TIMER1, &isr_timer);
-        SET_INTERRUPT_PRIORITY(INTERRUPT_TIMER1, 5);
-        ENABLE_INTERRUPT(INTERRUPT_TIMER1);
 
 	init_state();
+	 
+    SET_INTERRUPT_VECTOR(INTERRUPT_XUFO, &isr_qr_link);
+    SET_INTERRUPT_PRIORITY(INTERRUPT_XUFO, 21);
+    ENABLE_INTERRUPT(INTERRUPT_XUFO);
 
-	
+	// prepare timer interrupt for 500 Hz engine control (i.e., 5 ms)
+    X32_timer_per = 1 * CLOCKS_PER_MS;         
+    SET_INTERRUPT_VECTOR(INTERRUPT_TIMER1, &isr_timer);
+    SET_INTERRUPT_PRIORITY(INTERRUPT_TIMER1, 5);
+    ENABLE_INTERRUPT(INTERRUPT_TIMER1);
+
+
 	//Initialise communication
 	if (0 != comm_init())
 		return;
@@ -55,23 +41,21 @@ void main(void) {
 	ENABLE_INTERRUPT(INTERRUPT_GLOBAL);
 
 	finished=0;	
-
-	X32_leds =0x1;
-	X32_display=oo1;
+	
 	//Wait until data can be received
 	while (!finished)
 	{	
-		X32_leds |=0x2;
-		result = recv_data(&type, &data, &len);
-		if ( result == 1) {
-			handleInput(type);
+		if ( recv_data(&type, &data, &len) == 1) {
+			handleInput();
 			free(data);
 		}
-	        if (X32_ms_clock % 500 == 0) {
-		        toggleLED(128);
-			handleMode();
-	        	X32_display = oo1;
-        	}
+		
+        if (X32_ms_clock % 500 == 0) {
+	        X32_leds ^= 128;
+    	}
+		handleMode();		
+		compute_RPMs(); //compute the new oo* values based on the defined RPYL
+    	
 	}
 	//Uninitialise
 	comm_uninit();
@@ -82,100 +66,89 @@ void init_state(void)
 {
 	lift = roll = pitch = yaw = 0;
 	oo1 = oo2 = oo3 = oo4 = 0;
-	p_yaw=30;
+	p_yaw = INITIAL_P_YAW;
 	s0 = s1 = s2 = s3 = s4 = s5 = 0;
 	s0_bias = s1_bias = s2_bias = s3_bias = s4_bias = s5_bias = 0;
-	mode = SAFE; //starts in safe mode
+	mode = INITIAL_MODE; //starts in INITIAL_STATE mode
 }
 
 
-
-
-void handleInput (comm_type type) {
-	switch (type) 
-	{		
-		case RPYL: /* received RPYL info */
-			roll = *data++;
-			pitch = *data++;
-			yaw = *data++;
-			lift = *data;
-			break;
-		case KEYESC: /* ESC: abort / exit */
-			break;
-		case KEYRETURN: /*increment control mode */
-			break;
-		case SAFE: // Safe Mode
-			if ((roll==0) && (yaw==0) && (pitch==0) && (lift==0))
-				mode=SAFE;
-			else 
-				printf("Error roll, pitch, yaw and lift not zero, can't switch\n");
-			break;
-		case PANIC: // Panic Mode
-			if ((roll==0) && (yaw==0) && (pitch==0) && (lift==0))
-				mode=PANIC;
-			else 
-				printf("Error roll, pitch, yaw and lift not zero, can't switch\n");
-			break;
-		case MANUAL: // Manual Mode
-			if ((roll==0) && (yaw==0) && (pitch==0) && (lift==0))
-				mode=MANUAL;
-			else 
-				printf("Error roll, pitch, yaw and lift not zero, can't switch\n");
-			break;
-		case CALIBRATION: // Calibration Mode
-			if ((roll==0) && (yaw==0) && (pitch==0) && (lift==0))
-				mode=CALIBRATION;
-			else 
-				printf("Error roll, pitch, yaw and lift not zero, can't switch\n");			
-			break;
-		case YAW: // Yaw control Mode
-			if ((roll==0) && (yaw==0) && (pitch==0) && (lift==0))
-				mode=YAW;
-			else 
-				printf("Error roll, pitch, yaw and lift not zero, can't switch\n");
-			break;
-		case FULL: // Full control Mode
-			if ((roll==0) && (yaw==0) && (pitch==0) && (lift==0))
-				mode=FULL;
-			else 
-				printf("Error roll, pitch, yaw and lift not zero, can't switch\n");
-			break;		
-			
-		/* quad rotor control*/	
-
-		case KEYA: /* increase lift */
-      			break;
-		case KEYZ: /* decrease lift */
-      			break;
-		case KEYRIGHT: /*right arrow: roll down maybe*/
-			break;
-		case KEYLEFT: /*left arrow: roll up maybe*/
-			break;
-		case KEYUP: /*up arrow: pitch down */
-			break;
-		case KEYDOWN: /*down arrow: pitch up */
-			break;
-		case KEYW: /* increase yaw */
-      			break;
-		case KEYQ: /* decrease yaw */
-      			break;
-		case KEYU: /*yaw control P up*/
-			p_yaw++;
-			break;
-		case KEYJ: /*yaw control P down*/
-			p_yaw--;
-			break;
-		case KEYI: /*roll/pitch control P1 up*/
-			break;
-		case KEYK: /*roll/pitch control P1 down*/
-			break;
-		case KEYO: /*roll/pitch control P2 up*/
-			break;
-		case KEYL: /*roll/pitch control P2 down*/
-			break;
-		default:
-			break;
+void handleInput (void) {
+	if (type == KEY1) {
+		mode = PANIC;
+		return;
 	}
+	
+	if (type == RPYL && (mode == MANUAL || mode == YAW || mode == FULL)) {
+		// only update RPYL in modes where these info will be necessary
+		roll = data[0] - 64;
+		pitch = data[1] - 64;
+		yaw = data[2] - 64;
+		lift = data[3];
+		return;
+	}
+	
+	if (type >= KEYU && type <= KEYO){ //Control Parameter changes
+		switch (type) {
+			case KEYU: /*yaw control P up*/
+				p_yaw++;
+				printf("%d\n", p_yaw);
+				break;
+			case KEYJ: /*yaw control P down*/
+				p_yaw--;
+				if (p_yaw<1) p_yaw=1;
+				printf("%d\n", p_yaw);
+				break;
+			case KEYI: //roll/pitch control P1 up
+				break;
+			case KEYK: //roll/pitch control P1 down
+				break;
+			case KEYO: //roll/pitch control P2 up
+				break;
+			case KEYL: //roll/pitch control P2 down
+				break;
+			default:
+				break;				
+		}
+		return;
+	}
+		
+	if ((oo1==0) && (oo2==0) && (oo3==0) && (oo4==0)) //TODO sensors, whats missing??? //Change control
+	{		
+	  	switch (type) {			
+				case KEYESC: /* ESC: abort / exit */	
+					printf("Exiting...\n");			
+					finished=1;				
+					break;		
+				case KEYRETURN: /*increment control mode */
+					if (mode!=FULL)	
+						mode++;
+					else
+						mode=SAFE;				
+					break;		
+				case KEY0: /*Safe Mode*/
+					mode=SAFE;
+					break;
+				case KEY2: /*Manual Mode*/
+					mode=MANUAL;
+					break;										
+				case KEY3: /*Calibration Mode*/
+					mode=CALIBRATION;
+					break;					
+				case KEY4: /*Yaw control Mode*/
+					mode=YAW;
+					s5_bias=s5;
+					break;
+				case KEY5: /*Full control mode*/
+					mode=FULL;
+					break;
+				default:
+					printf("Ready to change mode but wrong key.\n");
+					break;
+			}
+		}
+		else
+			printf("Can't change mode or wrong key.\n");
 }
 
 
@@ -204,29 +177,43 @@ void handleMode (void) {
 	}
 }
 
-void toggleLED (int x) {
-	X32_leds ^= x;	
+void compute_RPMs(void) {
+
+	//TODO clip_RPYL(roll, pitch, yaw, lift, 100);	
+	clip_RPYL();
+	oo1 = SCALE_AE * (lift + 2 * pitch - yaw) / 4;
+	oo2 = SCALE_AE * (lift - 2 * roll + yaw) / 4;
+	oo3 = SCALE_AE * (lift - 2 * pitch - yaw) / 4;
+	oo4 = SCALE_AE * (lift + 2 * roll + yaw) / 4;
 }
 
 
 
-void isr_timer(void)
-{
-	
-	//printf("%d %d %d %d", oo1, oo2, oo3, oo4);
-        /* send actuator values to ae0..3 QR peripheral regs
-         */
 
-/*	if (oo1<0) oo1=0;*/
-/*	if (oo2<0) oo2=0;*/
-/*	if (oo3<0) oo3=0;*/
-/*	if (oo4<0) oo4=0;*/
-        
-	X32_QR_a0 = oo1;
-	//X32_display = oo1;
-        X32_QR_a1 = oo2;
-        X32_QR_a2 = oo3;
-        X32_QR_a3 = oo4;
+
+
+
+void clip_RPYL(void) //TODO how does this work???
+{
+/*	if(roll>(oldroll+limit_rate))*/
+/*		*roll=oldroll+limit_rate;*/
+/*	if(*roll<(oldroll-limit_rate))*/
+/*		*roll=oldroll-limit_rate;*/
+
+/*	if(*pitch>(oldpitch+limit_rate))*/
+/*		*pitch=oldpitch+limit_rate;*/
+/*	if(*pitch<(oldpitch-limit_rate))*/
+/*		*pitch=oldpitch-limit_rate;*/
+
+/*	if(*yaw>(oldyaw+limit_rate))*/
+/*		*yaw=oldyaw+limit_rate;*/
+/*	if(*yaw<(oldyaw-limit_rate))*/
+/*		*yaw=oldyaw-limit_rate;*/
+
+/*	if(*lift>(oldlift+limit_rate))*/
+/*		*lift=oldlift+limit_rate;*/
+/*	if(*lift<(oldlift-limit_rate))*/
+/*		*lift=oldlift-limit_rate;*/
 }
 
 
@@ -236,31 +223,32 @@ void isr_timer(void)
  */
 void isr_qr_link(void)
 {
-	/* get sensor and timestamp values
-	 */
-	s0 = X32_QR_s0; s1 = X32_QR_s1; s2 = X32_QR_s2; 
-	s3 = X32_QR_s3; s4 = X32_QR_s4; s5 = X32_QR_s5;
+	/* get sensor and timestamp values */
+	s0 = X32_QR_s0 - s0_bias;
+	s1 = X32_QR_s1 - s1_bias; 
+	s2 = X32_QR_s2 - s2_bias; 
+	s3 = X32_QR_s3 - s3_bias; 
+	s4 = X32_QR_s4 - s4_bias; 
+	s5 = X32_QR_s5 - s5_bias;
 }
 
-void clip_RPYL(int *roll, int *pitch, int *yaw, int *lift, int limit_rate)
+void isr_timer(void)
 {
-	if(*roll>(oldroll+limit_rate))
-		*roll=oldroll+limit_rate;
-	if(*roll<(oldroll-limit_rate))
-		*roll=oldroll-limit_rate;
-
-	if(*pitch>(oldpitch+limit_rate))
-		*pitch=oldpitch+limit_rate;
-	if(*pitch<(oldpitch-limit_rate))
-		*pitch=oldpitch-limit_rate;
-
-	if(*yaw>(oldyaw+limit_rate))
-		*yaw=oldyaw+limit_rate;
-	if(*yaw<(oldyaw-limit_rate))
-		*yaw=oldyaw-limit_rate;
-
-	if(*lift>(oldlift+limit_rate))
-		*lift=oldlift+limit_rate;
-	if(*lift<(oldlift-limit_rate))
-		*lift=oldlift-limit_rate;
-}s
+//Since we are clipping the RPYL, doing the same for the motors should not be necessary but you never know!		
+	if (oo1 < MIN_MOTOR1) oo1 = MIN_MOTOR1;
+	else if (oo1 > MAX_MOTOR1) oo1 = MAX_MOTOR1;
+	
+	if (oo2 < MIN_MOTOR2) oo2 = MIN_MOTOR2;
+	else if (oo2 > MAX_MOTOR2) oo2 = MAX_MOTOR2;
+	
+	if (oo3 < MIN_MOTOR3) oo3 = MIN_MOTOR3;
+	else if (oo3 > MAX_MOTOR3) oo3 = MAX_MOTOR3;
+	
+	if (oo4 < MIN_MOTOR4) oo4 = MIN_MOTOR4;
+	else if (oo4 > MAX_MOTOR4) oo4 = MAX_MOTOR4;
+	        
+	X32_QR_a0 = oo1;
+	X32_QR_a1 = oo2;
+	X32_QR_a2 = oo3;
+	X32_QR_a3 = oo4;
+}
