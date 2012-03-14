@@ -1,0 +1,47 @@
+% 1st-order Butterworth - fc 25 Hz at fs 500 Hz
+nmax = 400;
+n = (1:nmax);
+fs = 500;
+f = 25;
+t = n / fs;
+x = sin(2*pi*f*n/fs);
+
+% real coefficients
+a0 = 0.1367; % 0.0245221;
+a1 = a0;
+b0 = 1;
+b1 = -0.7265; % -0.95095676;
+x1 = 0; y1 = 0;
+for i = 1:nmax
+    x0 = x(i);
+    y0 = a0 * x0 + a1 * x1 - b1 * y1;
+    y(i) = y0;
+    x1 = x0; y1 = y0;
+end;
+
+% 14 bits fraction
+a0 = 2210; % 402;
+a1 = a0;
+b0 = 16384;
+b1 = -11903; % -15580;
+x1 = 0; y1 = 0;
+for i = 1:nmax
+    x0 = x(i);
+    y0 = (a0 * x0 + a1 * x1 - b1 * y1) / 16384;
+    y(i) = y0;
+    x1 = x0; y1 = y0;
+end;
+
+% 14 bits fraction, approximated to powers of 2
+a0 = 2048 + 128 + 32; % 256 + 128 + 16;
+a1 = a0;
+b0 = 16384;
+b1 = % -(8192 + 4096 + 2048 + 1024);
+x1 = 0; y1 = 0;
+for i = 1:nmax
+    x0 = x(i);
+    y0 = (a0 * x0 + a1 * x1 - b1 * y1) / 16384;
+    z(i) = y0;
+    x1 = x0; y1 = y0;
+end;
+figure ; plot(t,[x',y',z']);
