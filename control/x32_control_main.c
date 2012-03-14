@@ -15,6 +15,7 @@ int oo1, oo2, oo3, oo4;
 int s0, s1, s2, s3, s4, s5, timestamp;
 int s0_bias, s1_bias, s2_bias, s3_bias, s4_bias, s5_bias;
 int p_yaw, yaw_error;
+int p1_full, p2_full;
 
 unsigned char* data;
 int len;
@@ -67,6 +68,8 @@ void init_state(void)
 	lift = roll = pitch = yaw = 0;
 	oo1 = oo2 = oo3 = oo4 = 0;
 	p_yaw = INITIAL_P_YAW;
+	p1_full = INITIAL_P1_FULL;
+	p2_full = INITIAL_P2_FULL;		
 	s0 = s1 = s2 = s3 = s4 = s5 = 0;
 	s0_bias = s1_bias = s2_bias = s3_bias = s4_bias = s5_bias = 0;
 	mode = INITIAL_MODE; //starts in INITIAL_STATE mode
@@ -91,25 +94,33 @@ void handleInput (void) {
 	if (type >= KEYU && type <= KEYO){ //Control Parameter changes
 		switch (type) {
 			case KEYU: /*yaw control P up*/
-				p_yaw++;
-				printf("%d\n", p_yaw);
+				p_yaw += UP_P_YAW;
+				if (p_yaw > MAX_P_YAW) p_yaw = MAX_P_YAW;
 				break;
 			case KEYJ: /*yaw control P down*/
-				p_yaw--;
-				if (p_yaw<1) p_yaw=1;
-				printf("%d\n", p_yaw);
+				p_yaw -= DOWN_P_YAW;
+				if (p_yaw < MIN_P_YAW) p_yaw = MIN_P_YAW;
 				break;
 			case KEYI: //roll/pitch control P1 up
+				p1_full += UP_P1_FULL;
+				if (p1_full > MAX_P1_FULL) p1_full = MAX_P1_FULL;
 				break;
 			case KEYK: //roll/pitch control P1 down
+				p1_full -= DOWN_P1_FULL;
+				if (p1_full < MIN_P1_FULL) p1_full = MIN_P1_FULL;
 				break;
 			case KEYO: //roll/pitch control P2 up
+				p2_full += UP_P2_FULL;
+				if (p2_full > MAX_P2_FULL) p2_full = MAX_P2_FULL;				
 				break;
 			case KEYL: //roll/pitch control P2 down
+				p2_full -= DOWN_P2_FULL;
+				if (p2_full < MIN_P2_FULL) p2_full = MIN_P2_FULL;
 				break;
 			default:
 				break;				
 		}
+		printf("Controller changes:\np_yaw = %d\tp1_full = %d\tp2_full = %d\n", p_yaw,p1_full,p2_full);
 		return;
 	}
 		

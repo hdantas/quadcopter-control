@@ -7,6 +7,8 @@
 
 void full_mode_ctrl(void)
 {
-	//K_s = P1 * (roll_s - sphi) - P2 * sp;
+	yaw_mode_ctrl();
+	roll = p1_full * (roll - s0) - p2_full * s3;
+	pitch = p1_full * (pitch - s1) - p2_full * s4;	
 
 }

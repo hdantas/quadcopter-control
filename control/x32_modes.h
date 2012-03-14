@@ -9,12 +9,12 @@
 #define X32_QR_a1 		peripherals[PERIPHERAL_XUFO_A1]
 #define X32_QR_a2 		peripherals[PERIPHERAL_XUFO_A2]
 #define X32_QR_a3 		peripherals[PERIPHERAL_XUFO_A3]
-#define X32_QR_s0 		peripherals[PERIPHERAL_XUFO_S0]
-#define X32_QR_s1 		peripherals[PERIPHERAL_XUFO_S1]
-#define X32_QR_s2 		peripherals[PERIPHERAL_XUFO_S2]
-#define X32_QR_s3 		peripherals[PERIPHERAL_XUFO_S3]
-#define X32_QR_s4 		peripherals[PERIPHERAL_XUFO_S4]
-#define X32_QR_s5 		peripherals[PERIPHERAL_XUFO_S5]
+#define X32_QR_s0 		peripherals[PERIPHERAL_XUFO_S0] //sax
+#define X32_QR_s1 		peripherals[PERIPHERAL_XUFO_S1] //say
+#define X32_QR_s2 		peripherals[PERIPHERAL_XUFO_S2] //saz
+#define X32_QR_s3 		peripherals[PERIPHERAL_XUFO_S3] //sp
+#define X32_QR_s4 		peripherals[PERIPHERAL_XUFO_S4] //sq
+#define X32_QR_s5 		peripherals[PERIPHERAL_XUFO_S5] //sr
 #define X32_QR_timestamp 	peripherals[PERIPHERAL_XUFO_TIMESTAMP]
 #define X32_display		peripherals[PERIPHERAL_DISPLAY]
 #define SCALE_AE 12
@@ -44,17 +44,30 @@
 
 
 #define INITIAL_P_YAW 30
-#define INITIAL_P1 30
-#define INITIAL_P2 30
+#define INITIAL_P1_FULL 10
+#define INITIAL_P2_FULL 10
 #define INITIAL_MODE SAFE
-
-//rates for decreasing motor RPM and minimum value for motor RPM for panic mode
 
 #define REDUCING_ROLL 1
 #define REDUCING_PITCH 1
 #define REDUCING_YAW 1
 #define REDUCING_LIFT 1
 
+//Controller Ps limits
+#define UP_P_YAW 1
+#define DOWN_P_YAW 1
+#define MAX_P_YAW 100
+#define MIN_P_YAW 1
+
+#define UP_P1_FULL 1
+#define DOWN_P1_FULL 1
+#define MAX_P1_FULL 100
+#define MIN_P1_FULL 1
+
+#define UP_P2_FULL 1
+#define DOWN_P2_FULL 1
+#define MAX_P2_FULL 100
+#define MIN_P2_FULL 1
 
 //functions
 void isr_timer(void);
@@ -79,7 +92,7 @@ extern int lift, roll, pitch, yaw;
 extern int oo1, oo2, oo3, oo4;
 extern int s0, s1, s2, s3, s4, s5;
 extern int s0_bias, s1_bias, s2_bias, s3_bias, s4_bias, s5_bias;
-extern int p_yaw;
+extern int p_yaw, p1_full, p2_full;
 extern volatile int finished;
 
 #endif
