@@ -1,14 +1,32 @@
 #include "console_IO.h"
 #include "comm.h"
-#include "joystick.h"
+#include "joy_function.h"
 #include <stdio.h>
 #include <stdlib.h>
-#define JS_SENSITIVITY 512
+//#define JS_SENSITIVITY 512
+#define KB_SHIFT 0
+#define KB_MAX 127
+#define JS_SHIFT 32768
 
+#define CEILING_TRESHOLD 20000
+#define FLOOR_TRESHOLD -20000
+
+#define JS_SENSITIVITY_CEILING_ROLL 256
+#define JS_SENSITIVITY_CEILING_PITCH 256
+#define JS_SENSITIVITY_CEILING_YAW 256
+#define JS_SENSITIVITY_CEILING_LIFT 256
+
+#define JS_SENSITIVITY_ROLL 512
+#define JS_SENSITIVITY_PITCH 512
+#define JS_SENSITIVITY_YAW 512
+#define JS_SENSITIVITY_LIFT 512
+
+int js_sensitivity[4] = {JS_SENSITIVITY_ROLL, JS_SENSITIVITY_PITCH, JS_SENSITIVITY_YAW, JS_SENSITIVITY_LIFT};
 extern int *axis;		//vector for axes values
 extern char *button;		//vector for button value
 int kb_RPYL[4];
 int js_RPYL[4];
+int oldroll,oldpitch,oldyaw,oldlift;
 
 //gcc -o main main.c comm.c checksum.c serial.c convert.c joy_function.c console_IO.c
 
@@ -24,35 +42,43 @@ int source_button(char c, comm_type *type_c)
 			return 1;
 		case '0':		/*Safe Mode*/
 			*type_c=KEY0;
+			printf("Entering safe mode\n");
 			return 1;
 		case '1':		/*Panic Mode*/
+			printf("Entering panic mode\n");
 			*type_c=KEY1;
 			return 1;
 		case '2':		/*Manual Mode*/
+			printf("Entering manual mode\n");
 			*type_c=KEY2;
 			return 1;
 		case '3':		/*Calibration Mode*/
+			printf("Entering calibration mode\n");
 			*type_c=KEY3;
 			return 1;
 		case '4':		/*Yaw control Mode*/
+			printf("Entering yaw mode\n");
 			*type_c=KEY4;
 			return 1;
 		case '5':		/*Full control mode*/
+			printf("Entering full mode\n");
 			*type_c=KEY5;
 			return 1;
 		case 'a':		/* increase lift */
+			printf("Increase lift mode\n");
 			*type_c=KEYA;
-			if(kb_RPYL[3]<127)
+			if(kb_RPYL[3]<KB_MAX)
 				kb_RPYL[3]+= 1;
 			return 0;
 		case 'z':		/* decrease lift */
+			printf("Decrease lift mode\n");
 			*type_c=KEYZ;
 			if(kb_RPYL[3]>0)
 				kb_RPYL[3]-=1;
 			return 0;
 		case 0x43:		/*right arrow: roll down maybe*/
 			*type_c=KEYRIGHT;
-			if(kb_RPYL[0]<127)
+			if(kb_RPYL[0]<KB_MAX)
 				kb_RPYL[0] += 1;
 			return 0;
 		case 0x44:		/*left arrow: roll up maybe*/
@@ -67,7 +93,7 @@ int source_button(char c, comm_type *type_c)
 			return 0;
 		case 0x42:		/*down arrow: pitch up */
 			*type_c=KEYDOWN;
-			if(kb_RPYL[1]<127)
+			if(kb_RPYL[1]<KB_MAX)
 				kb_RPYL[1] += 1;
 			return 0;
 		case 'q':		/* decrease yaw */
@@ -77,13 +103,15 @@ int source_button(char c, comm_type *type_c)
 			return 0;
 		case 'w':		/* increase yaw */
 			*type_c=KEYW;
-			if(kb_RPYL[2]<127)
+			if(kb_RPYL[2]<KB_MAX)
 				kb_RPYL[2] += 1;
 			return 0;
 		case 'u':		/*yaw control P up*/
+			printf("Increase yaw control P\n");
 			*type_c=KEYU;
 			return 1;
 		case 'j':		/*yaw control P down*/
+			printf("Decrease yaw control P\n");
 			*type_c=KEYJ;
 			return 1;
 		case 'i':		/*roll/pitch control P1 up*/
@@ -104,6 +132,31 @@ int source_button(char c, comm_type *type_c)
 	}
 }
 
+void clip_RPYL(int *RPYL_data,int limit_rate)
+{
+	if(RPYL_data[0]>(oldroll+limit_rate))
+		RPYL_data[0]=oldroll+limit_rate;
+	if(RPYL_data[0]<(oldroll-limit_rate))
+		RPYL_data[0]=oldroll-limit_rate;
+
+	if(RPYL_data[1]>(oldpitch+limit_rate))
+		RPYL_data[1]=oldpitch+limit_rate;
+	if(RPYL_data[1]<(oldpitch-limit_rate))
+		RPYL_data[1]=oldpitch-limit_rate;
+
+	if(RPYL_data[2]>(oldyaw+limit_rate))
+		RPYL_data[2]=oldyaw+limit_rate;
+	if(RPYL_data[2]<(oldyaw-limit_rate))
+		RPYL_data[2]=oldyaw-limit_rate;
+
+	if(RPYL_data[3]>(oldlift+limit_rate))
+		RPYL_data[3]=oldlift+limit_rate;
+	if(RPYL_data[3]<(oldlift-limit_rate))
+		RPYL_data[3]=oldlift-limit_rate;
+}
+			
+
+
 int main(void) {
 	//Declare variables
 	int RPYL_value[4];
@@ -115,12 +168,16 @@ int main(void) {
 	int exit;
 	char c;
 	comm_type type_c;
+	
+	oldroll=oldpitch=oldyaw=oldlift=0;
 
 	exit=0;
 
-	kb_RPYL[0]=kb_RPYL[1]=kb_RPYL[2]=64;
+	kb_RPYL[0]=kb_RPYL[1]=kb_RPYL[2]=KB_SHIFT;
 	kb_RPYL[3]=0;
-	js_RPYL[0]=0;//TODO
+	for (i=0;i<4;i++)
+		js_RPYL[i]=0;//TODO
+	
 	
 	//Initialise communication
 	if (0 != comm_init())
@@ -128,7 +185,7 @@ int main(void) {
 
 	term_initio();
 
-/*	joy_open();*/
+	joy_open();
 	
 
 	while(!exit) {
@@ -148,21 +205,48 @@ int main(void) {
 		}
 		
 	
-/*		if(read_joy()!= 0) */
-/*			{*/
-/*				js_RPYL[0]=(axis[0]+32767) / JS_SENSITIVITY;*/
-/*				js_RPYL[1]=(axis[1]+32767) / JS_SENSITIVITY;*/
-/*				js_RPYL[2] += ((axis[2]+32767) / JS_SENSITIVITY);*/
-/*				js_RPYL[3] = -(axis[3] - 32767) / JS_SENSITIVITY;*/
+		if(read_joy()!= 0) 
+			{
+				//printf("%d\n", axis[2]);				
+				js_RPYL[0] = (axis[0]+JS_SHIFT) / js_sensitivity[0];
+				js_RPYL[1] = (axis[1]+JS_SHIFT) / js_sensitivity[1];
+				js_RPYL[2] = (axis[2]+JS_SHIFT) / js_sensitivity[2];
+				js_RPYL[3] = -(axis[3]-JS_SHIFT)/ js_sensitivity[3];
+				
+				printf(" Roll %d %d \t Pitch %d %d \t Yaw %d %d \t Lift %d %d\n",js_sensitivity[0], js_RPYL[0],js_sensitivity[1],js_RPYL[1],js_sensitivity[2],js_RPYL[2],js_sensitivity[3],js_RPYL[3]);
+				if (axis[0] > CEILING_TRESHOLD || axis[0] < FLOOR_TRESHOLD)
+					js_sensitivity[0]= JS_SENSITIVITY_CEILING_ROLL;
+				else
+					js_sensitivity[0]= JS_SENSITIVITY_ROLL;
 
-/*				//press fire button*/
-/*				if (button[15]==1)*/
-/*					if (0 != send_data(KEYESC, 0, 0))*/
-/*					{*/
-/*						printf("Error sending buttons\n");*/
-/*						break;*/
-/*					}*/
-/*			}*/
+				if (axis[1] > CEILING_TRESHOLD || axis[1] < FLOOR_TRESHOLD)
+					js_sensitivity[1]= JS_SENSITIVITY_CEILING_PITCH;
+				else
+					js_sensitivity[1]= JS_SENSITIVITY_PITCH;
+
+				if (axis[2] > CEILING_TRESHOLD || axis[2] < FLOOR_TRESHOLD)
+					js_sensitivity[2]= JS_SENSITIVITY_CEILING_YAW;
+				else
+					js_sensitivity[2]= JS_SENSITIVITY_YAW;
+
+				if (-axis[3] > CEILING_TRESHOLD)
+					js_sensitivity[3]= JS_SENSITIVITY_CEILING_LIFT;
+				else
+					js_sensitivity[3]= JS_SENSITIVITY_LIFT;
+
+
+				//printf("axis[2]: %d js_RPYL[2]: %d\n", axis[2], js_RPYL[2]);
+
+				//press fire button
+				if (button[0]==1)//TODO
+				{					
+					if (0 != send_data(KEY1, 0, 0))
+					{
+						printf("Error sending buttons\n");
+						break;
+					}
+				}
+			}
 
 
 			
@@ -173,18 +257,21 @@ int main(void) {
 		RPYL_value[3]=js_RPYL[3]+kb_RPYL[3];
 		
 		if (RPYL_value[0] <= 0) RPYL_value[0] = 0;
-		if (RPYL_value[0] >= 127) RPYL_value[0] = 127;
+		if (RPYL_value[0] >= KB_MAX) RPYL_value[0] = KB_MAX;
 		if (RPYL_value[1] <= 0) RPYL_value[1] = 0;
-		if (RPYL_value[1] >= 127) RPYL_value[1] = 127;
+		if (RPYL_value[1] >= KB_MAX) RPYL_value[1] = KB_MAX;
 		if (RPYL_value[2] <= 0) RPYL_value[2] = 0;
-		if (RPYL_value[2] >= 127) RPYL_value[2] = 127;
+		if (RPYL_value[2] >= KB_MAX) RPYL_value[2] = KB_MAX;
 		if (RPYL_value[3] <= 0) RPYL_value[3] = 0;
-		if (RPYL_value[3] >= 127) RPYL_value[3] = 127;
+		if (RPYL_value[3] >= KB_MAX) RPYL_value[3] = KB_MAX;
 
 		for (i=0;i<4;i++)
 			RPYL_data[i]=(unsigned char) RPYL_value[i];
+
+		clip_RPYL(RPYL_value,5);
+
 		
-		printf("roll: %d pitch: %d yaw: %d lift: %d\n", RPYL_data[0],RPYL_data[1],RPYL_data[2],RPYL_data[3]);
+		//printf("roll: %d pitch: %d yaw: %d lift: %d\n", RPYL_data[0],RPYL_data[1],RPYL_data[2],RPYL_data[3]);
 	
 			
 		if (0 != send_data(RPYL, RPYL_data, 4))
@@ -192,6 +279,11 @@ int main(void) {
 			printf("Error sending joystick\n");
 			break;		
 		}
+		
+		oldroll=RPYL_data[0];
+		oldpitch=RPYL_data[0];
+		oldyaw=RPYL_data[0];
+		oldlift=RPYL_data[0];
 
 		usleep(5000);
 
@@ -211,7 +303,7 @@ int main(void) {
 	printf("Exiting...\n");
 
 	term_exitio();
-/*	joy_close();*/
+	joy_close();
 	//Uninitialise
 	comm_uninit();
 	return 0;
