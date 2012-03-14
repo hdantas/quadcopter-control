@@ -7,8 +7,8 @@
 # $^ : The names of all the prerequisites, with spaces between them
 
 #######################  COMMUNICATION  #######################	
-INCLUDE_DIRECTORIES = ../commtest ../control ../inputPC
-GCCDIR += $(addprefix -I ,$(INCLUDE_DIRECTORIES))
+INCLUDE_DIRECTORIES = ../commtest ../control ../inputPC ../filter
+GCCDIR += $(addprefix -I,$(INCLUDE_DIRECTORIES))
 
 vpath %.h $(INCLUDE_DIRECTORIES)
 vpath %.c $(INCLUDE_DIRECTORIES)
@@ -33,7 +33,7 @@ pccomm : $(PCOBJECTS)
 	gcc -o pccomm $^ -Wall
 
 qr_: $(X32SOURCES)
-	lcc-x32 -I${X32INC} -c $^
+	lcc-x32 -I${X32INC} -c $^ $(GCCDIR)
 	
 qrcomm: $(X32OBJECTS)
 	lcc-x32 -o qrcomm.ce $^

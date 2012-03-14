@@ -6,8 +6,8 @@
 # $^ : The names of all the prerequisites, with spaces between the
 
 #######################  CONTROL  #######################
-INCLUDE_DIRECTORIES = ../commtest ../control ../inputPC ../filter
-GCCDIR += $(addprefix -I ,$(INCLUDE_DIRECTORIES))
+INCLUDE_DIRECTORIES =../commtest ../control ../inputPC ../filter
+GCCDIR +=$(addprefix -I,$(INCLUDE_DIRECTORIES))
 
 vpath %.h $(INCLUDE_DIRECTORIES)
 vpath %.c $(INCLUDE_DIRECTORIES)
@@ -20,7 +20,6 @@ X32SOURCES = x32_control_main.c x32_kalman.c x32_serial.c x32_log.c comm.c check
 	     convert.c x32_manual_mode.c x32_full_mode.c \
 	     x32_calibration_mode.c x32_panic_mode.c x32_safe_mode.c x32_yaw_mode.c
 X32OBJECTS = $(X32SOURCES:.c=.co)
-
 
 
 all: pc qr
@@ -36,10 +35,10 @@ pccontrol: $(PCOBJECTS)
 	gcc -o pccontrol $^ -Wall
 	
 qr_: $(X32SOURCES)
-	lcc-x32 -c $^ -I${X32INC} -I${X32LIBDIR} -I../commtest -Wl-lib
+	lcc-x32 -c $^ -I${X32INC} -I${X32LIBDIR} ${GCCDIR} -Wl-lib
 
 qrcontrol: $(X32OBJECTS)
-	lcc-x32 -o qrcontrol.ce -I${X32INC} -I${X32LIBDIR} -I../commtest -Wl-lib $^
+	lcc-x32 -o qrcontrol.ce -I${X32INC} -I${X32LIBDIR} -Wl-lib $^
 
 upload: qrcontrol.ce
 	x32-upload qrcontrol.ce -c /dev/ttyUSB0 -e

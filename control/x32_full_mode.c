@@ -4,6 +4,7 @@
 #include "x32_common.h"
 #include "comm.h"
 #include "x32_modes.h"
+#include "kalman.h"
 
 void full_mode_ctrl(void)
 {
@@ -12,7 +13,7 @@ void full_mode_ctrl(void)
 
 	yaw_mode_ctrl();
 	
-	kalman_filter_roll():
+	kalman_filter_roll();
 	roll = p1_full * (roll - phi_kalman_roll) - p2_full * p_kalman_roll;
 
 	kalman_filter_pitch();
