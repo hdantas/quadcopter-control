@@ -4,6 +4,7 @@
 #include "x32_common.h"
 #include "comm.h"
 #include "x32_modes.h"
+#include "kalman.h"
 
 /*int kb_lift, kb_yaw, kb_pitch, kb_roll;*/
 /*int js_lift, js_yaw, js_pitch, js_roll;*/
@@ -73,6 +74,7 @@ void init_state(void)
 	s0 = s1 = s2 = s3 = s4 = s5 = 0;
 	s0_bias = s1_bias = s2_bias = s3_bias = s4_bias = s5_bias = 0;
 	mode = INITIAL_MODE; //starts in INITIAL_STATE mode
+	init_kalman();
 }
 
 
@@ -93,6 +95,14 @@ void handleInput (void) {
 	
 	if (type >= KEYU && type <= KEYO){ //Control Parameter changes
 		switch (type) {
+			case KEYY: ////increase P2PHI
+				p2phi += UP_P2PHI;
+				if (p2phi > MAX_P2PHI) p2phi = MAX_P2PHI;
+				break;
+			case KEYH: //decrease P2PHI
+				p2phi -= DOWN_P2PHI;
+				if (p2phi < MIN_P2PHI) p2phi = MIN_P2PHI;
+				break;			
 			case KEYU: /*yaw control P up*/
 				p_yaw += UP_P_YAW;
 				if (p_yaw > MAX_P_YAW) p_yaw = MAX_P_YAW;
@@ -133,7 +143,7 @@ void handleInput (void) {
 					finished=1;				
 					break;		
 				case KEYRETURN: /*increment control mode */
-					if (mode!=FULL)
+					if (mode != FULL)
 						mode++;
 					else
 						mode=SAFE;				
@@ -142,7 +152,7 @@ void handleInput (void) {
 					mode=SAFE;
 					break;
 				case KEY2: /*Manual Mode*/
-					mode=MANUAL;
+					mode=MANUAL;	
 					break;										
 				case KEY3: /*Calibration Mode*/
 					mode=CALIBRATION;
@@ -156,7 +166,9 @@ void handleInput (void) {
 				default:
 					printf("Ready to change mode but wrong key.\n");
 					break;
-			}
+		}
+		if (mode == FULL)
+			reset_kalman();
 	}
 	else
 		printf("Can't change mode or wrong key.\n");

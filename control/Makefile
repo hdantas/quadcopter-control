@@ -6,7 +6,7 @@
 # $^ : The names of all the prerequisites, with spaces between the
 
 #######################  CONTROL  #######################
-INCLUDE_DIRECTORIES = ../commtest ../control ../inputPC
+INCLUDE_DIRECTORIES = ../commtest ../control ../inputPC ../filter
 GCCDIR += $(addprefix -I ,$(INCLUDE_DIRECTORIES))
 
 vpath %.h $(INCLUDE_DIRECTORIES)
@@ -16,7 +16,7 @@ vpath %.c $(INCLUDE_DIRECTORIES)
 PCSOURCES = control_main.c serial.c log.c comm.c checksum.c convert.c console_IO.c joy_function.c
 PCOBJECTS = $(PCSOURCES:.c=.o)
 
-X32SOURCES = x32_control_main.c x32_serial.c x32_log.c comm.c checksum.c \
+X32SOURCES = x32_control_main.c x32_kalman.c x32_serial.c x32_log.c comm.c checksum.c \
 	     convert.c x32_manual_mode.c x32_full_mode.c \
 	     x32_calibration_mode.c x32_panic_mode.c x32_safe_mode.c x32_yaw_mode.c
 X32OBJECTS = $(X32SOURCES:.c=.co)

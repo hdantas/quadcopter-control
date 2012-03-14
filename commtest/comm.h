@@ -15,7 +15,8 @@ typedef enum {
 	KEYA,
 	KEYZ,
 	KEYW,
-	KEYE,
+	KEYY, //increase P2PHI
+	KEYH, //decrease P2PHI
 	KEYU,
 	KEYJ,
 	KEYI,

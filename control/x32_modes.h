@@ -42,7 +42,6 @@
 #define MIN_MOTOR3 0
 #define MIN_MOTOR4 0
 
-
 #define INITIAL_P_YAW 30
 #define INITIAL_P1_FULL 10
 #define INITIAL_P2_FULL 10
