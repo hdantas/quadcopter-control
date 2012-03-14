@@ -22,15 +22,15 @@
 
 //max and min values for motors
 
-#define MAX_LIFT 128
-#define MAX_ROLL -64
-#define MAX_PITCH -64
-#define MAX_YAW -64
+#define MAX_LIFT 100
+#define MAX_ROLL 100
+#define MAX_PITCH 100
+#define MAX_YAW 100
 
-#define MIN_LIFT 128
-#define MIN_ROLL -64
-#define MIN_PITCH -64
-#define MIN_YAW -64
+#define MIN_LIFT 10
+#define MIN_ROLL 10
+#define MIN_PITCH 10
+#define MIN_YAW 10
 
 #define MAX_MOTOR1 200
 #define MAX_MOTOR2 200

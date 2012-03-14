@@ -1,6 +1,6 @@
 #include "console_IO.h"
 #include "comm.h"
-#include "joy_function.h"
+#include "joystick.h"
 #include <stdio.h>
 #include <stdlib.h>
 //#define JS_SENSITIVITY 512

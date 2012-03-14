@@ -18,6 +18,10 @@ unsigned char buttons;	//number of buttons
 int *axis;		//vector for axes values
 char *button;		//vector for button value
 
+//131328 Logitech Logitech Extreme 3D
+//axes=6
+//buttons=15
+
 
 int joy_open(void)
 {
@@ -42,6 +46,16 @@ int joy_open(void)
 	ioctl(fd_JOY, JSIOCGAXES, &axes);
 	ioctl(fd_JOY, JSIOCGBUTTONS, &buttons);
 	ioctl(fd_JOY, JSIOCGNAME(NAME_LENGTH), name);
+
+	printf("%d %s",version, name);
+
+	if ((version!=131328)||(strcmp(name,"Logitech Logitech Extreme 3D")!=0))
+    	{
+		perror("version and device name don't match");
+		exit(1);
+	}
+	
+	printf("axes: %d buttons: %d\n", axes, buttons);
 
 	axis = calloc(axes, sizeof(int));
 	button = calloc(buttons, sizeof(char));
@@ -90,6 +104,8 @@ int	read_joy()
 			perror("\njstest: error reading");
 			exit (1);
 		}
+	//if (button[0] == 1)
+		//printf("Press");
 
 	if ((button_press==0)&&(axis_move==0))	//no read
 		return 0;

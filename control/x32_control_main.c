@@ -54,8 +54,8 @@ void main(void) {
         if (X32_ms_clock % 500 == 0) {
 	        X32_leds ^= 128;
     	}
-		handleMode();		
-		compute_RPMs(); //compute the new oo* values based on the defined RPYL
+	handleMode();		
+	compute_RPMs(); //compute the new oo* values based on the defined RPYL
     	
 	}
 	//Uninitialise
@@ -124,15 +124,16 @@ void handleInput (void) {
 		return;
 	}
 		
-	if ((oo1==0) && (oo2==0) && (oo3==0) && (oo4==0)) //TODO sensors, whats missing??? //Change control
+	if ((oo1==0) && (oo2==0) && (oo3==0) && (oo4==0)) //Change control
 	{		
+		calibration_mode();
 	  	switch (type) {			
 				case KEYESC: /* ESC: abort / exit */	
 					printf("Exiting...\n");			
 					finished=1;				
 					break;		
 				case KEYRETURN: /*increment control mode */
-					if (mode!=FULL)	
+					if (mode!=FULL)
 						mode++;
 					else
 						mode=SAFE;				
@@ -148,7 +149,6 @@ void handleInput (void) {
 					break;					
 				case KEY4: /*Yaw control Mode*/
 					mode=YAW;
-					s5_bias=s5;
 					break;
 				case KEY5: /*Full control mode*/
 					mode=FULL;
@@ -157,9 +157,9 @@ void handleInput (void) {
 					printf("Ready to change mode but wrong key.\n");
 					break;
 			}
-		}
-		else
-			printf("Can't change mode or wrong key.\n");
+	}
+	else
+		printf("Can't change mode or wrong key.\n");
 }
 
 
