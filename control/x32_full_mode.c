@@ -6,8 +6,8 @@
 #include "x32_modes.h"
 #include "kalman.h"
 	
-#define CAPACITY 256
-#define CAPACITY_SHIFT 8 //256 = 2^8	
+#define CAPACITY 4096
+#define CAPACITY_SHIFT 12 //4096 = 2^12	
 
 int latency[CAPACITY];
 int i = 0;

@@ -9,6 +9,7 @@
 /*int kb_lift, kb_yaw, kb_pitch, kb_roll;*/
 /*int js_lift, js_yaw, js_pitch, js_roll;*/
 int lift, roll, pitch, yaw;
+int oldlift, oldroll, oldpitch, oldyaw;
 comm_type mode, type;
 volatile int finished;
 
@@ -43,7 +44,7 @@ void main(void) {
 	ENABLE_INTERRUPT(INTERRUPT_GLOBAL);
 
 	finished=0;	
-	
+
 	//Wait until data can be received
 	while (!finished)
 	{	
@@ -51,13 +52,12 @@ void main(void) {
 			handleInput();
 			free(data);
 		}
-		
-        if (X32_ms_clock % 500 == 0) {
-	        X32_leds ^= 128;
-    	}
+	if (X32_ms_clock % 100 == 0){
+		X32_display = oo1;
+	}
 	handleMode();		
 	compute_RPMs(); //compute the new oo* values based on the defined RPYL
-    	
+
 	}
 	//Uninitialise
 	comm_uninit();
@@ -92,44 +92,53 @@ void handleInput (void) {
 		return;
 	}
 	
-	if (type >= KEYU && type <= KEYO){ //Control Parameter changes
+	if (type >= KEYY && type <= KEYO){ //Control Parameter changes
 		switch (type) {
 			case KEYY: ////increase P2PHI
 				p2phi += UP_P2PHI;
 				if (p2phi > MAX_P2PHI) p2phi = MAX_P2PHI;
+				printf("Increase P2PHI\n");
 				break;
 			case KEYH: //decrease P2PHI
 				p2phi -= DOWN_P2PHI;
 				if (p2phi < MIN_P2PHI) p2phi = MIN_P2PHI;
+				printf("Decrease P2PHI\n");
 				break;			
 			case KEYU: /*yaw control P up*/
 				p_yaw += UP_P_YAW;
 				if (p_yaw > MAX_P_YAW) p_yaw = MAX_P_YAW;
+				printf("Increase yaw control P\n");
 				break;
 			case KEYJ: /*yaw control P down*/
 				p_yaw -= DOWN_P_YAW;
 				if (p_yaw < MIN_P_YAW) p_yaw = MIN_P_YAW;
+				printf("Decrease yaw control P\n");
 				break;
 			case KEYI: //roll/pitch control P1 up
 				p1_full += UP_P1_FULL;
 				if (p1_full > MAX_P1_FULL) p1_full = MAX_P1_FULL;
+				printf("Increase roll pitch control P1\n");
 				break;
 			case KEYK: //roll/pitch control P1 down
 				p1_full -= DOWN_P1_FULL;
 				if (p1_full < MIN_P1_FULL) p1_full = MIN_P1_FULL;
+				printf("Decrease roll pitch control P1\n");
 				break;
 			case KEYO: //roll/pitch control P2 up
 				p2_full += UP_P2_FULL;
 				if (p2_full > MAX_P2_FULL) p2_full = MAX_P2_FULL;				
+				printf("Increase roll pitch control P2\n");
 				break;
 			case KEYL: //roll/pitch control P2 down
 				p2_full -= DOWN_P2_FULL;
 				if (p2_full < MIN_P2_FULL) p2_full = MIN_P2_FULL;
+				printf("Decrease roll pitch control P1\n");
 				break;
 			default:
+				printf("Doesn't know what controller parameter to change\n");
 				break;				
 		}
-		printf("Controller changes:\np_yaw = %d\tp1_full = %d\tp2_full = %d\n", p_yaw,p1_full,p2_full);
+		printf("Controller changes:\np_yaw = %d\tp1_full = %d\tp2_full = %d\tp2phi = %d\n", p_yaw,p1_full,p2_full,p2phi);
 		return;
 	}
 		
@@ -146,21 +155,27 @@ void handleInput (void) {
 						mode++;
 					else
 						mode=SAFE;				
+					printf("Changing to next mode\n");
 					break;		
 				case KEY0: /*Safe Mode*/
 					mode=SAFE;
+					printf("Changing to safe mode\n");
 					break;
 				case KEY2: /*Manual Mode*/
 					mode=MANUAL;	
+					printf("Changing to manual mode\n");
 					break;										
 				case KEY3: /*Calibration Mode*/
 					mode=CALIBRATION;
+					printf("Changing to calibration mode\n");
 					break;					
 				case KEY4: /*Yaw control Mode*/
 					mode=YAW;
+					printf("Changing to yaw mode\n");
 					break;
 				case KEY5: /*Full control mode*/
 					mode=FULL;
+					printf("Changing to full mode\n");
 					break;
 				default:
 					printf("Ready to change mode but wrong key.\n");
@@ -175,67 +190,93 @@ void handleInput (void) {
 
 
 void handleMode (void) {
+	oldroll = roll;
+	oldpitch = pitch;
+	oldyaw = yaw;
+	oldlift = lift;
+	
 	switch(mode) {
 		case SAFE:
+			X32_leds = 1;
 			safe_mode_ctrl();
 			break;
 		case PANIC:
+			X32_leds = 2;
 			panic_mode_ctrl();
 			break;
 		case MANUAL:
+			X32_leds = 4;		
 			manual_mode_ctrl();
 			break;
 		case CALIBRATION:
+			X32_leds = 8;
 			calibration_mode();
 			break;
 		case YAW:
+			X32_leds = 16;		
 			yaw_mode_ctrl();
 			break;
 		case FULL:
+			X32_leds = 32;		
 			full_mode_ctrl();
 			break;
 		default:
+			X32_leds = 64;		
 			break;
 	}
 }
 
 void compute_RPMs(void) {
-
 	//TODO clip_RPYL(roll, pitch, yaw, lift, 100);	
 	clip_RPYL();
-	oo1 = SCALE_AE * (lift + 2 * pitch - yaw) / 4;
-	oo2 = SCALE_AE * (lift - 2 * roll + yaw) / 4;
-	oo3 = SCALE_AE * (lift - 2 * pitch - yaw) / 4;
-	oo4 = SCALE_AE * (lift + 2 * roll + yaw) / 4;
+	oo1 = SCALE_AE * (lift + 2 * pitch - yaw) >> 2;
+	oo2 = SCALE_AE * (lift - 2 * roll + yaw) >> 2;
+	oo3 = SCALE_AE * (lift - 2 * pitch - yaw) >> 2;
+	oo4 = SCALE_AE * (lift + 2 * roll + yaw) >> 2;
 }
 
-
-
-
-
-
-
-void clip_RPYL(void) //TODO how does this work???
+void clip_RPYL(void)
 {
-/*	if(roll>(oldroll+limit_rate))*/
-/*		*roll=oldroll+limit_rate;*/
-/*	if(*roll<(oldroll-limit_rate))*/
-/*		*roll=oldroll-limit_rate;*/
+// top clipping
+/*	if (roll > MAX_ROLL)
+		roll = MAX_ROLL;
+	if (pitch > MAX_PITCH)
+		pitch = MAX_PITCH;
+	if (yaw > MAX_YAW)
+		yaw = MAX_YAW;
+	if (lift > MAX_LIFT)
+		lift = MAX_LIFT;						
 
-/*	if(*pitch>(oldpitch+limit_rate))*/
-/*		*pitch=oldpitch+limit_rate;*/
-/*	if(*pitch<(oldpitch-limit_rate))*/
-/*		*pitch=oldpitch-limit_rate;*/
+// botttom clipping
+	if (roll < MIN_ROLL)
+		roll = MIN_ROLL;
+	if (pitch < MIN_PITCH)
+		pitch = MIN_PITCH;
+	if (yaw < MAX_YAW)
+		yaw = MIN_YAW;
+	if (lift < MIN_LIFT)
+		lift = MIN_LIFT;						
 
-/*	if(*yaw>(oldyaw+limit_rate))*/
-/*		*yaw=oldyaw+limit_rate;*/
-/*	if(*yaw<(oldyaw-limit_rate))*/
-/*		*yaw=oldyaw-limit_rate;*/
+// rate clipping
+	if(roll - oldroll > LIMIT_RATE)
+		roll = oldroll + LIMIT_RATE;
+	else if(oldroll - roll > LIMIT_RATE)
+		roll = oldroll - LIMIT_RATE;
 
-/*	if(*lift>(oldlift+limit_rate))*/
-/*		*lift=oldlift+limit_rate;*/
-/*	if(*lift<(oldlift-limit_rate))*/
-/*		*lift=oldlift-limit_rate;*/
+	if(pitch - oldpitch > LIMIT_RATE)
+		pitch = oldpitch + LIMIT_RATE;
+	else if(oldpitch - pitch > LIMIT_RATE)
+		pitch = oldpitch - LIMIT_RATE;
+		
+	if(yaw - oldyaw > LIMIT_RATE)
+		yaw = oldyaw + LIMIT_RATE;
+	else if(oldyaw - yaw > LIMIT_RATE)
+		yaw = oldyaw - LIMIT_RATE;
+		
+	if(pitch - oldlift > LIMIT_RATE)
+		lift = oldlift + LIMIT_RATE;
+	else if(oldlift - lift > LIMIT_RATE)
+		lift = oldlift - LIMIT_RATE;			*/	
 }
 
 
@@ -257,17 +298,17 @@ void isr_qr_link(void)
 void isr_timer(void)
 {
 //Since we are clipping the RPYL, doing the same for the motors should not be necessary but you never know!		
-	if (oo1 < MIN_MOTOR1) oo1 = MIN_MOTOR1;
-	else if (oo1 > MAX_MOTOR1) oo1 = MAX_MOTOR1;
+	/*if (oo1 < MIN_MOTOR1) oo1 = MIN_MOTOR1;
+	if (oo1 > MAX_MOTOR1) oo1 = MAX_MOTOR1;
 	
 	if (oo2 < MIN_MOTOR2) oo2 = MIN_MOTOR2;
-	else if (oo2 > MAX_MOTOR2) oo2 = MAX_MOTOR2;
+	if (oo2 > MAX_MOTOR2) oo2 = MAX_MOTOR2;
 	
 	if (oo3 < MIN_MOTOR3) oo3 = MIN_MOTOR3;
-	else if (oo3 > MAX_MOTOR3) oo3 = MAX_MOTOR3;
+	if (oo3 > MAX_MOTOR3) oo3 = MAX_MOTOR3;
 	
 	if (oo4 < MIN_MOTOR4) oo4 = MIN_MOTOR4;
-	else if (oo4 > MAX_MOTOR4) oo4 = MAX_MOTOR4;
+	if (oo4 > MAX_MOTOR4) oo4 = MAX_MOTOR4;*/
 	        
 	X32_QR_a0 = oo1;
 	X32_QR_a1 = oo2;

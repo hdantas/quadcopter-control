@@ -21,10 +21,4 @@ int malloc_memory_size = 1024;
 #define COMM_LED	0x02
 #define QR_LINK_LED	0x04
 
-//define motors properly
-#define PERIPHERAL_XUFO_A0 0x59
-#define PERIPHERAL_XUFO_A1 0x5A
-#define PERIPHERAL_XUFO_A2 0x5B
-#define PERIPHERAL_XUFO_A3 0x5C
-
 #endif

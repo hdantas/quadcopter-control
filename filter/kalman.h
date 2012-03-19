@@ -2,16 +2,16 @@
 #define _KALMAN_H
 
 #define SCALE_KALMAN 4100
-#define INV_C1 4096
-#define FIXED_CONV1 20 // 2^1048576
-#define FIXED_CONV2 20 // 2^1048576
-#define FIXED_CONV3 24 // 2^16777216
+#define INV_C1 256
+#define FIXED_CONV1 16 // 2^1048576
+#define FIXED_CONV2 16 // 2^1048576
+#define FIXED_CONV3 20 // 2^16777216
 
-#define INITIAL_P2PHI 4300
-#define MAX_P2PHI 7000
-#define MIN_P2PHI 2000
-#define UP_P2PHI 100
-#define DOWN_P2PHI 100
+#define INITIAL_P2PHI 268
+#define MAX_P2PHI 400
+#define MIN_P2PHI 100
+#define UP_P2PHI 5
+#define DOWN_P2PHI 5
 
 //variables
 extern int p_bias_roll, p_kalman_roll, phi_kalman_roll, phi_error_roll, p2phi;

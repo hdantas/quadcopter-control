@@ -1,9 +1,0 @@
-Start retrieving the log...
-Log data: 49	85 D1 
-Waiting for logfile size
-Log data: 48	B2 7F 7F 00 00 00 00 00 03 DD 
-Received logfile size
-Log size: -65536
-Done retrieving the log.
-Log data: 49	80 ED 
-Log data: 49	80 ED 

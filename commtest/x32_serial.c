@@ -1,8 +1,7 @@
 #include "serial.h"
 
-//#include "x32_nexys.h"
+#include "x32_nexys.h"
 #include "x32_common.h"
-#include "log.h"
 #include <stdio.h>
 //#include <stdlib.h>
 //#include <string.h>
@@ -10,8 +9,6 @@
 #define X32_serial_data		peripherals[PERIPHERAL_PRIMARY_DATA]
 #define X32_serial_status	peripherals[PERIPHERAL_PRIMARY_STATUS]
 #define X32_leds		peripherals[PERIPHERAL_LEDS]
-#define X32_display		peripherals[PERIPHERAL_DISPLAY]
-		
 
 //Local ISRs
 void isr_serial_rx(void);
@@ -28,7 +25,7 @@ int serial_buffer_send_top;
 
 void toggle_led(int i) 
 {
-	//X32_leds = (X32_leds ^ (1 << i));
+	X32_leds = (X32_leds ^ (1 << i));
 }
 
 int serial_init() {
@@ -59,7 +56,7 @@ int serial_init() {
 	ENABLE_INTERRUPT(INTERRUPT_PRIMARY_TX);
 
 	//Communication is setup correctly
-	X32_leds |= COMM_LED;
+	//X32_leds |= COMM_LED;
 
 	return 0;
 }
@@ -70,7 +67,7 @@ void serial_uninit() {
 	DISABLE_INTERRUPT(INTERRUPT_PRIMARY_TX);
 
 	//Communication is off
-	X32_leds &= ~COMM_LED;
+	//X32_leds &= ~COMM_LED;
 }
 
 /*	Returns 1 if data is available, 0 otherwise 
@@ -82,7 +79,6 @@ int serial_read(unsigned char* buffer) {
 	if (serial_buffer_recv_base != serial_buffer_recv_top) {
 		//Return a character and update buffer
 		*buffer = serial_buffer_recv[serial_buffer_recv_base];
-		X32_display = *buffer;
 		serial_buffer_recv_base++;
 		if (serial_buffer_recv_base >= SERIAL_BUFFER_SIZE)
 			serial_buffer_recv_base = 0;
@@ -110,12 +106,12 @@ int serial_write(unsigned char c) {
 		serial_buffer_send_top++;
 		if (serial_buffer_send_top >= SERIAL_BUFFER_SIZE)
 			serial_buffer_send_top = 0;
-		if (serial_buffer_send_top == serial_buffer_send_base) {
-			log_msg("Serial output buffer full; discarding");
-			log_int(serial_buffer_send_top);
-			log_data(LOG_COMM_DISCARD_BUFFER, serial_buffer_send, SERIAL_BUFFER_SIZE);
-			return -1;
-		}
+/*		if (serial_buffer_send_top == serial_buffer_send_base) {*/
+/*			log_msg("Serial output buffer full; discarding");*/
+/*			log_int(serial_buffer_send_top);*/
+/*			log_data(LOG_COMM_DISCARD_BUFFER, serial_buffer_send, SERIAL_BUFFER_SIZE);*/
+/*			return -1;*/
+/*		}*/
 		ENABLE_INTERRUPT(INTERRUPT_GLOBAL);
 		return 0;
 	}
@@ -123,20 +119,20 @@ int serial_write(unsigned char c) {
 
 //ISRs
 void isr_serial_rx(void) {
-	//Keep reading while flag is raised
+	//Keep reading while flag is raised	
 	while (X32_serial_status & 0x02) {
-		//X32_leds=serial_buffer_recv_top;
 		//Read into buffer, update
-		serial_buffer_recv[serial_buffer_recv_top] = X32_serial_data;
+		serial_buffer_recv[serial_buffer_recv_top]= X32_serial_data;
 		//Update and circle index
 		serial_buffer_recv_top++;
 		if (serial_buffer_recv_top >= SERIAL_BUFFER_SIZE)
 			serial_buffer_recv_top = 0;
-		if (serial_buffer_recv_top == serial_buffer_recv_base) {
-			log_msg("Serial input buffer full; discarding");
-			log_int(serial_buffer_recv_top);
-			log_data(LOG_COMM_DISCARD_BUFFER, serial_buffer_recv, SERIAL_BUFFER_SIZE);
-		}
+/*		if (serial_buffer_recv_top == serial_buffer_recv_base) {*/
+/*			log_msg("Serial input buffer full; discarding");*/
+/*			log_int(serial_buffer_recv_top);*/
+/*			log_data(LOG_COMM_DISCARD_BUFFER, serial_buffer_recv, SERIAL_BUFFER_SIZE);*/
+/*		}*/
+		//X32_leds=serial_buffer_recv[serial_buffer_recv_top];
 	}
 }
 void isr_serial_tx(void) {
@@ -145,7 +141,6 @@ void isr_serial_tx(void) {
 		(serial_buffer_send_top != serial_buffer_send_base)) {
 		//Write to output buffer
 		X32_serial_data = serial_buffer_send[serial_buffer_send_base];
-		X32_display = serial_buffer_send[serial_buffer_send_base];
 		//Update and circle index
 		serial_buffer_send_base++;
 		if (serial_buffer_send_base >= SERIAL_BUFFER_SIZE)

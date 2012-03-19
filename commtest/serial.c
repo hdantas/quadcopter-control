@@ -3,8 +3,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include <stdio.h>
-
 //On linux, use serial connection /dev/ttyS0, or /dev/ttyUSB0 for USB-to-serial cable
 #define SERIAL_DEVICE	"/dev/ttyUSB0"
 
@@ -59,12 +57,8 @@ void serial_uninit() {
 /*	Returns 1 if byte was read and placed in buffer, 0 otherwise
 */
 int serial_read(unsigned char* buffer) {
-	int result;
 	//Attempt to read single byte from serial link
-	result = read(serial_handle, buffer, 1);
-	if (result == 1)
-		printf("Read %.02X from serial link\n", *buffer);
-	return result;
+	return read(serial_handle, buffer, 1);
 }
 
 /*	Returns 1 if byte was written successfully, 0 if busy, -1 on error.

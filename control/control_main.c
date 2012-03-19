@@ -271,7 +271,7 @@ int main(void) {
 		clip_RPYL(RPYL_value,5);
 
 		
-		//printf("roll: %d pitch: %d yaw: %d lift: %d\n", RPYL_data[0],RPYL_data[1],RPYL_data[2],RPYL_data[3]);
+		printf("roll: %d pitch: %d yaw: %d lift: %d\n", RPYL_data[0],RPYL_data[1],RPYL_data[2],RPYL_data[3]);
 	
 			
 		if (0 != send_data(RPYL, RPYL_data, 4))
@@ -297,7 +297,7 @@ int main(void) {
 			//Free buffer memory again (IMPORTANT!)
 			free(data);
 		}
-		
+
 	}
 
 	printf("Exiting...\n");

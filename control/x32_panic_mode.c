@@ -8,7 +8,7 @@
 
 void panic_mode_ctrl(void)
 {
-	if (X32_ms_clock % 500 == 0){
+	if (X32_ms_clock % 100 == 0){
 		// Reduce by REDUNCING_RPM* motor* RPM until a predefined minumum
 		if (roll > MIN_ROLL)
 			roll -= REDUCING_ROLL;

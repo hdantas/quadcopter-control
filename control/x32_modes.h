@@ -22,15 +22,17 @@
 
 //max and min values for motors
 
+#define LIMIT_RATE 20
+
 #define MAX_LIFT 100
 #define MAX_ROLL 100
 #define MAX_PITCH 100
 #define MAX_YAW 100
 
-#define MIN_LIFT 10
-#define MIN_ROLL 10
-#define MIN_PITCH 10
-#define MIN_YAW 10
+#define MIN_LIFT 0
+#define MIN_ROLL 0
+#define MIN_PITCH 0
+#define MIN_YAW 0
 
 #define MAX_MOTOR1 200
 #define MAX_MOTOR2 200
