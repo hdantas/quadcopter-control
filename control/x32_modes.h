@@ -17,7 +17,7 @@
 #define X32_QR_s5 		peripherals[PERIPHERAL_XUFO_S5] //sr
 #define X32_QR_timestamp 	peripherals[PERIPHERAL_XUFO_TIMESTAMP]
 #define X32_display		peripherals[PERIPHERAL_DISPLAY]
-#define SCALE_AE 12
+#define SCALE_AE 14
 #define MAX_AE 1023
 
 //max and min values for motors
