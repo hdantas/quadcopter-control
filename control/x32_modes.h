@@ -93,7 +93,7 @@ extern int lift, roll, pitch, yaw;
 extern int oo1, oo2, oo3, oo4;
 extern int s0, s1, s2, s3, s4, s5;
 extern int s0_bias, s1_bias, s2_bias, s3_bias, s4_bias, s5_bias;
-extern int p_yaw, p1_full, p2_full;
+extern int p_yaw, yaw_controller, p1_full, p2_full;
 extern volatile int finished;
 
 #endif

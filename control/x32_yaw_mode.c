@@ -7,5 +7,5 @@
 
 void yaw_mode_ctrl()
 {
-	yaw = p_yaw * (yaw - s5);
+	yaw = p_yaw * (yaw_controller - s5);
 }

@@ -16,7 +16,7 @@ volatile int finished;
 int oo1, oo2, oo3, oo4;
 int s0, s1, s2, s3, s4, s5, timestamp;
 int s0_bias, s1_bias, s2_bias, s3_bias, s4_bias, s5_bias;
-int p_yaw, yaw_error;
+int p_yaw, yaw_controller;
 int p1_full, p2_full;
 
 unsigned char* data;
@@ -69,6 +69,7 @@ void init_state(void)
 	lift = roll = pitch = yaw = 0;
 	oo1 = oo2 = oo3 = oo4 = 0;
 	p_yaw = INITIAL_P_YAW;
+	yaw_controller = 0;
 	p1_full = INITIAL_P1_FULL;
 	p2_full = INITIAL_P2_FULL;		
 	s0 = s1 = s2 = s3 = s4 = s5 = 0;
@@ -171,6 +172,7 @@ void handleInput (void) {
 					break;					
 				case KEY4: /*Yaw control Mode*/
 					mode=YAW;
+					yaw_controller = yaw; //save the yaw to use in the controller;
 					printf("Changing to yaw mode\n");
 					break;
 				case KEY5: /*Full control mode*/
@@ -238,7 +240,7 @@ void compute_RPMs(void) {
 void clip_RPYL(void)
 {
 // top clipping
-/*	if (roll > MAX_ROLL)
+	if (roll > MAX_ROLL)
 		roll = MAX_ROLL;
 	if (pitch > MAX_PITCH)
 		pitch = MAX_PITCH;
@@ -258,25 +260,25 @@ void clip_RPYL(void)
 		lift = MIN_LIFT;						
 
 // rate clipping
-	if(roll - oldroll > LIMIT_RATE)
+	if((roll - oldroll) > LIMIT_RATE)
 		roll = oldroll + LIMIT_RATE;
-	else if(oldroll - roll > LIMIT_RATE)
+	else if((oldroll - roll) > LIMIT_RATE)
 		roll = oldroll - LIMIT_RATE;
 
-	if(pitch - oldpitch > LIMIT_RATE)
+	if((pitch - oldpitch) > LIMIT_RATE)
 		pitch = oldpitch + LIMIT_RATE;
-	else if(oldpitch - pitch > LIMIT_RATE)
+	else if((oldpitch - pitch) > LIMIT_RATE)
 		pitch = oldpitch - LIMIT_RATE;
 		
-	if(yaw - oldyaw > LIMIT_RATE)
+	if((yaw - oldyaw) > LIMIT_RATE)
 		yaw = oldyaw + LIMIT_RATE;
-	else if(oldyaw - yaw > LIMIT_RATE)
+	else if((oldyaw - yaw) > LIMIT_RATE)
 		yaw = oldyaw - LIMIT_RATE;
 		
-	if(pitch - oldlift > LIMIT_RATE)
+	if((pitch - oldlift) > LIMIT_RATE)
 		lift = oldlift + LIMIT_RATE;
-	else if(oldlift - lift > LIMIT_RATE)
-		lift = oldlift - LIMIT_RATE;			*/	
+	else if((oldlift - lift) > LIMIT_RATE)
+		lift = oldlift - LIMIT_RATE;				
 }
 
 
@@ -298,7 +300,7 @@ void isr_qr_link(void)
 void isr_timer(void)
 {
 //Since we are clipping the RPYL, doing the same for the motors should not be necessary but you never know!		
-	/*if (oo1 < MIN_MOTOR1) oo1 = MIN_MOTOR1;
+	if (oo1 < MIN_MOTOR1) oo1 = MIN_MOTOR1;
 	if (oo1 > MAX_MOTOR1) oo1 = MAX_MOTOR1;
 	
 	if (oo2 < MIN_MOTOR2) oo2 = MIN_MOTOR2;
@@ -308,7 +310,7 @@ void isr_timer(void)
 	if (oo3 > MAX_MOTOR3) oo3 = MAX_MOTOR3;
 	
 	if (oo4 < MIN_MOTOR4) oo4 = MIN_MOTOR4;
-	if (oo4 > MAX_MOTOR4) oo4 = MAX_MOTOR4;*/
+	if (oo4 > MAX_MOTOR4) oo4 = MAX_MOTOR4;
 	        
 	X32_QR_a0 = oo1;
 	X32_QR_a1 = oo2;

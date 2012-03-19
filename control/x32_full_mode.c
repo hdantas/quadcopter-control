@@ -26,10 +26,10 @@ void full_mode_ctrl(void)
 	yaw_mode_ctrl();
 	
 	kalman_filter_roll();
-	roll = p1_full * (roll - phi_kalman_roll) - p2_full * p_kalman_roll;
+	roll = p1_full * (SCALE_KALMAN*roll - phi_kalman_roll) - p2_full * p_kalman_roll;
 
 	kalman_filter_pitch();
-	pitch = p1_full * (pitch - theta_kalman_pitch) - p2_full * q_kalman_pitch;	
+	pitch = p1_full * (SCALE_KALMAN*pitch - theta_kalman_pitch) - p2_full * q_kalman_pitch;
 	
 	endtime=X32_us_clock;
 	
