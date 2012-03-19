@@ -25,15 +25,15 @@ void main(void) {
 
 	init_state();
 	 
-    SET_INTERRUPT_VECTOR(INTERRUPT_XUFO, &isr_qr_link);
-    SET_INTERRUPT_PRIORITY(INTERRUPT_XUFO, 21);
-    ENABLE_INTERRUPT(INTERRUPT_XUFO);
+	SET_INTERRUPT_VECTOR(INTERRUPT_XUFO, &isr_qr_link);
+	SET_INTERRUPT_PRIORITY(INTERRUPT_XUFO, 21);
+	ENABLE_INTERRUPT(INTERRUPT_XUFO);
 
 	// prepare timer interrupt for 500 Hz engine control (i.e., 5 ms)
-    X32_timer_per = 1 * CLOCKS_PER_MS;         
-    SET_INTERRUPT_VECTOR(INTERRUPT_TIMER1, &isr_timer);
-    SET_INTERRUPT_PRIORITY(INTERRUPT_TIMER1, 5);
-    ENABLE_INTERRUPT(INTERRUPT_TIMER1);
+	X32_timer_per = 1 * CLOCKS_PER_MS;         
+	SET_INTERRUPT_VECTOR(INTERRUPT_TIMER1, &isr_timer);
+	SET_INTERRUPT_PRIORITY(INTERRUPT_TIMER1, 5);
+	ENABLE_INTERRUPT(INTERRUPT_TIMER1);
 
 
 	//Initialise communication
@@ -84,8 +84,7 @@ void handleInput (void) {
 		return;
 	}
 	
-	if (type == RPYL && (mode == MANUAL || mode == YAW || mode == FULL)) {
-		// only update RPYL in modes where these info will be necessary
+	if (type == RPYL) {
 		roll = data[0] - 64;
 		pitch = data[1] - 64;
 		yaw = data[2] - 64;
