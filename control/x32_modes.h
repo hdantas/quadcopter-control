@@ -17,12 +17,22 @@
 #define X32_QR_s5 		peripherals[PERIPHERAL_XUFO_S5] //sr
 #define X32_QR_timestamp 	peripherals[PERIPHERAL_XUFO_TIMESTAMP]
 #define X32_display		peripherals[PERIPHERAL_DISPLAY]
+
 #define SCALE_AE 14
 #define MAX_AE 1023
+#define SCALE_LIFT 30
+#define SCALE_MANUAL 14
+#define SCALE_YAW_ERROR 1
+#define SCALE_ROLL_ERROR 50
+#define SCALE_PITCH_ERROR 50
+
+#define SCALE_ROLL 156
+#define SCALE_PITCH 156
+#define SCALE_YAW 1
 
 //max and min values for motors
 
-#define LIMIT_RATE 20
+#define LIMIT_RATE 100
 
 #define MAX_LIFT 100
 #define MAX_ROLL 100
@@ -34,31 +44,41 @@
 #define MIN_PITCH 0
 #define MIN_YAW 0
 
-#define MAX_MOTOR1 200
-#define MAX_MOTOR2 200
-#define MAX_MOTOR3 200
-#define MAX_MOTOR4 200
+#define MAX_MOTOR1 1023
+#define MAX_MOTOR2 1023
+#define MAX_MOTOR3 1023
+#define MAX_MOTOR4 1023
 
-#define MIN_MOTOR1 0
-#define MIN_MOTOR2 0
-#define MIN_MOTOR3 0
-#define MIN_MOTOR4 0
+#define MIN_MOTOR1 10
+#define MIN_MOTOR2 10
+#define MIN_MOTOR3 10
+#define MIN_MOTOR4 10
 
-#define INITIAL_P_YAW 30
+#define INITIAL_P_YAW 40
 #define INITIAL_P1_FULL 10
-#define INITIAL_P2_FULL 10
+#define INITIAL_P2_FULL 25
 #define INITIAL_MODE SAFE
 
-#define REDUCING_ROLL 1
-#define REDUCING_PITCH 1
-#define REDUCING_YAW 1
-#define REDUCING_LIFT 1
+#define MIN_OO1 0
+#define MIN_OO2 0
+#define MIN_OO3 0
+#define MIN_OO4 0
+
+#define REDUCING_OO1 10
+#define REDUCING_OO2 10
+#define REDUCING_OO3 10
+#define REDUCING_OO4 10
 
 //Controller Ps limits
 #define UP_P_YAW 1
 #define DOWN_P_YAW 1
 #define MAX_P_YAW 100
 #define MIN_P_YAW 1
+
+#define SHIFT_PHI_KALMAN_ROLL 5
+#define SHIFT_P_KALMAN_ROLL 5
+#define SHIFT_THETA_KALMAN_PITCH 5
+#define SHIFT_Q_KALMAN_PITCH 5
 
 #define UP_P1_FULL 1
 #define DOWN_P1_FULL 1
@@ -69,10 +89,15 @@
 #define DOWN_P2_FULL 1
 #define MAX_P2_FULL 100
 #define MIN_P2_FULL 1
+#define BLINK_COUNT 1000
+#define TIME_OUT_QR_INT 10000 // 10 ms
+
+#define TIME_OUT_LINK 1000000 //1000000 us 1 s
 
 //functions
 void isr_timer(void);
 void isr_qr_link(void);
+void isr_overflow(void);
 void safe_mode_ctrl(void);
 void panic_mode_ctrl(void);
 void manual_mode_ctrl(void);
@@ -83,17 +108,21 @@ void init_state(void);
 void handleMode (void);
 void handleInput (void);
 void init_state(void);
-void clip_RPYL(void);
-void compute_RPMs(void);
+void clip_AE(void);
+void check_pc_link(void);
+void check_qr_link(void);
+void toggle_led(int i);
 
 
 //variables
 extern comm_type mode, type;
 extern int lift, roll, pitch, yaw;
+extern int lift_error, roll_error, pitch_error, yaw_error;
 extern int oo1, oo2, oo3, oo4;
 extern int s0, s1, s2, s3, s4, s5;
 extern int s0_bias, s1_bias, s2_bias, s3_bias, s4_bias, s5_bias;
-extern int p_yaw, yaw_controller, p1_full, p2_full;
+extern int p_yaw, p1_full, p2_full;
 extern volatile int finished;
+extern int time_last_packet;
 
 #endif

@@ -6,43 +6,37 @@
 #include "x32_modes.h"
 #include "kalman.h"
 	
-#define CAPACITY 4096
-#define CAPACITY_SHIFT 12 //4096 = 2^12	
-
-int latency[CAPACITY];
-int i = 0;
-int j = 0;
-int starttime = 0;
-int endtime = 0;
-int average = 0;
 	
 void full_mode_ctrl(void)
 {
 	//roll = p1_full * (roll - s0) - p2_full * s3;
-	//pitch = p1_full * (pitch - s1) - p2_full * s4;	
+	//pitch = p1_full * (pitch - s1) - p2_full * s4;
+	//int starttime, endtime;
 
-	starttime = X32_us_clock;
+
+	//starttime = X32_us_clock;
 	
-	yaw_mode_ctrl();
+	ENABLE_INTERRUPT(INTERRUPT_OVERFLOW);
+
 	
+	yaw_error = p_yaw * ((yaw*SCALE_YAW) - s5);
+
 	kalman_filter_roll();
-	roll = p1_full * (SCALE_KALMAN*roll - phi_kalman_roll) - p2_full * p_kalman_roll;
+	roll_error = p1_full * ((roll*SCALE_ROLL) - (phi_kalman_roll >> SHIFT_PHI_KALMAN_ROLL)) - p2_full * (p_kalman_roll >> SHIFT_P_KALMAN_ROLL);
 
 	kalman_filter_pitch();
-	pitch = p1_full * (SCALE_KALMAN*pitch - theta_kalman_pitch) - p2_full * q_kalman_pitch;
-	
-	endtime=X32_us_clock;
-	
-	latency[i++] = endtime-starttime;
+	pitch_error = p1_full * ((pitch*SCALE_PITCH) - (theta_kalman_pitch >> SHIFT_THETA_KALMAN_PITCH)) - p2_full * (q_kalman_pitch >> SHIFT_Q_KALMAN_PITCH);
 
-	if (i == CAPACITY - 1)
-	{	
-		average = 0;
-		for (j=0; j<CAPACITY; j++)
-			average += latency[j];
-		average = average << CAPACITY_SHIFT;
-		printf("Average control latency : %d\n",average);
-		i=0;
-	}	
 
+	oo1 = ((SCALE_LIFT*lift) + 2 * (pitch_error / SCALE_PITCH_ERROR) - (SCALE_YAW_ERROR*yaw_error)) >> 2;
+	oo2 = ((SCALE_LIFT*lift) - 2 * (roll_error / SCALE_ROLL_ERROR) + (SCALE_YAW_ERROR*yaw_error)) >> 2;
+	oo3 = ((SCALE_LIFT*lift) - 2 * (pitch_error / SCALE_PITCH_ERROR) - (SCALE_YAW_ERROR*yaw_error)) >> 2;
+	oo4 = ((SCALE_LIFT*lift) + 2 * (roll_error / SCALE_ROLL_ERROR) + (SCALE_YAW_ERROR*yaw_error)) >> 2;
+
+	DISABLE_INTERRUPT(INTERRUPT_OVERFLOW);
+
+	/*endtime=X32_us_clock;
+	if (X32_ms_clock % 100 == 0)
+		printf("%d\n", endtime-starttime);*/
 }
+		

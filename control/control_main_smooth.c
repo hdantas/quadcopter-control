@@ -8,18 +8,19 @@
 #define KB_MAX 127
 #define JS_SHIFT 32768
 
-#define CEILING_TRESHOLD 20000
-#define FLOOR_TRESHOLD -20000
+#define TRESHOLD 20000
 
-#define JS_SENSITIVITY_CEILING_ROLL 512
-#define JS_SENSITIVITY_CEILING_PITCH 512
-#define JS_SENSITIVITY_CEILING_YAW 512
-#define JS_SENSITIVITY_CEILING_LIFT 512
+#define JS_SLOPE -0.0128
 
 #define JS_SENSITIVITY_ROLL 512
 #define JS_SENSITIVITY_PITCH 512
 #define JS_SENSITIVITY_YAW 512
 #define JS_SENSITIVITY_LIFT 512
+
+#define JS_SENSITIVITY_CEILING_ROLL 256
+#define JS_SENSITIVITY_CEILING_PITCH 256
+#define JS_SENSITIVITY_CEILING_YAW 256
+#define JS_SENSITIVITY_CEILING_LIFT 256
 
 int js_sensitivity[4] = {JS_SENSITIVITY_ROLL, JS_SENSITIVITY_PITCH, JS_SENSITIVITY_YAW, JS_SENSITIVITY_LIFT};
 extern int *axis;		//vector for axes values
@@ -207,32 +208,35 @@ int main(void) {
 	
 		if(read_joy()!= 0) 
 			{
-				//printf("%d\n", axis[2]);				
+				//printf("%d\n", axis[2]);
+
+				if (abs(axis[0])<TRESHOLD)
+					js_sensitivity[0]=JS_SLOPE*(abs(axis[0]))+JS_SENSITIVITY_ROLL;
+				else
+					js_sensitivity[0]=JS_SENSITIVITY_CEILING_ROLL;
+
+				
+				if (abs(axis[1])<TRESHOLD)
+					js_sensitivity[1]=JS_SLOPE*(abs(axis[1]))+JS_SENSITIVITY_PITCH;
+				else
+					js_sensitivity[1]=JS_SENSITIVITY_CEILING_PITCH;
+
+				if (abs(axis[2])<TRESHOLD)
+					js_sensitivity[2]=JS_SLOPE*(abs(axis[2]))+JS_SENSITIVITY_YAW;
+				else
+					js_sensitivity[2]=JS_SENSITIVITY_CEILING_YAW;
+
+				if (abs(axis[3])<TRESHOLD)
+					js_sensitivity[3]=JS_SLOPE*(abs(axis[3]))+JS_SENSITIVITY_LIFT;
+				else
+					js_sensitivity[3]=JS_SENSITIVITY_CEILING_LIFT;
+								
 				js_RPYL[0] = (axis[0]+JS_SHIFT) / js_sensitivity[0];
 				js_RPYL[1] = (axis[1]+JS_SHIFT) / js_sensitivity[1];
 				js_RPYL[2] = (axis[2]+JS_SHIFT) / js_sensitivity[2];
 				js_RPYL[3] = -(axis[3]-JS_SHIFT)/ js_sensitivity[3];
 				
-				printf(" Roll %d %d \t Pitch %d %d \t Yaw %d %d \t Lift %d %d\n",js_sensitivity[0], js_RPYL[0],js_sensitivity[1],js_RPYL[1],js_sensitivity[2],js_RPYL[2],js_sensitivity[3],js_RPYL[3]);
-				if (axis[0] > CEILING_TRESHOLD || axis[0] < FLOOR_TRESHOLD)
-					js_sensitivity[0]= JS_SENSITIVITY_CEILING_ROLL;
-				else
-					js_sensitivity[0]= JS_SENSITIVITY_ROLL;
-
-				if (axis[1] > CEILING_TRESHOLD || axis[1] < FLOOR_TRESHOLD)
-					js_sensitivity[1]= JS_SENSITIVITY_CEILING_PITCH;
-				else
-					js_sensitivity[1]= JS_SENSITIVITY_PITCH;
-
-				if (axis[2] > CEILING_TRESHOLD || axis[2] < FLOOR_TRESHOLD)
-					js_sensitivity[2]= JS_SENSITIVITY_CEILING_YAW;
-				else
-					js_sensitivity[2]= JS_SENSITIVITY_YAW;
-
-				if (-axis[3] > CEILING_TRESHOLD)
-					js_sensitivity[3]= JS_SENSITIVITY_CEILING_LIFT;
-				else
-					js_sensitivity[3]= JS_SENSITIVITY_LIFT;
+				//printf(" Roll %d %d \t Pitch %d %d \t Yaw %d %d \t Lift %d %d\n",js_sensitivity[0], js_RPYL[0],js_sensitivity[1],js_RPYL[1],js_sensitivity[2],js_RPYL[2],js_sensitivity[3],js_RPYL[3]);
 
 
 				//printf("axis[2]: %d js_RPYL[2]: %d\n", axis[2], js_RPYL[2]);

@@ -1,5 +1,0 @@
-# depslib dependency file v1.0
-1331652984 source:/home/enrico/University/Kalman filter/Kalman/kalman.c
-	<stdlib.h>
-	<stdio.h>
-

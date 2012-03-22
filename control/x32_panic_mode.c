@@ -8,20 +8,32 @@
 
 void panic_mode_ctrl(void)
 {
-	if (X32_ms_clock % 100 == 0){
+
+	int avarage;
+
+	if (X32_ms_clock % 50 == 0){
 		// Reduce by REDUNCING_RPM* motor* RPM until a predefined minumum
-		if (roll > MIN_ROLL)
-			roll -= REDUCING_ROLL;
-		if (pitch > MIN_PITCH)
-			pitch -= REDUCING_PITCH;
-		if (yaw > MIN_YAW)
-			yaw -= REDUCING_YAW;
-		if (lift > MIN_LIFT)
-			lift -= REDUCING_LIFT;
+		
+		avarage=(oo1+oo2+oo3+oo4)/4;
+
+		oo1=avarage;
+		oo2=avarage;
+		oo3=avarage;
+		oo4=avarage;
+		
+		if (oo1 > MIN_OO1)
+			oo1 -= REDUCING_OO1;
+		if (oo2 > MIN_OO2)
+			oo2 -= REDUCING_OO2;
+		if (oo3 > MIN_OO3)
+			oo3 -= REDUCING_OO3;
+		if (oo4 > MIN_OO4)
+			oo4 -= REDUCING_OO4;
 	}
+
 	
 	//if all motor are below a certain RPM move to safe mode
-	if ((roll <= MIN_ROLL) && (pitch <= MIN_PITCH) && (yaw <= MIN_YAW) && (lift <= MIN_LIFT))
+	if ((oo1 <= MIN_OO1) && (oo2 <= MIN_OO2) && (oo3 <= MIN_OO3) && (oo4 <= MIN_OO4))
 		mode = SAFE;
 
 	

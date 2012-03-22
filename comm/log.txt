@@ -1,9 +1,0 @@
-Received REQ_LOG.
-4858 Start logging
-8640 Received REQ_LOG.
-8642 sensor 1 0.123
-8643 sensor 2 4.567
-8644 sensor 3 8.901
-8645 sensor 4 2.345
-8647 Retrieving log
-8648 stop Logging

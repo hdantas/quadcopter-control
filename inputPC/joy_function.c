@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <string.h>
 #include "joystick.h"
+#include "console_IO.h"
 
 #define NAME_LENGTH 128
 
@@ -39,6 +40,7 @@ int joy_open(void)
 	if ((fd_JOY = open("/dev/input/js0", O_RDONLY)) < 0) 
     	{
 		perror("jstest");
+		term_exitio();
 		exit(1);
 	}
 
@@ -47,7 +49,7 @@ int joy_open(void)
 	ioctl(fd_JOY, JSIOCGBUTTONS, &buttons);
 	ioctl(fd_JOY, JSIOCGNAME(NAME_LENGTH), name);
 
-	//printf("%d %s",version, name);
+	printf("%d %s",version, name);
 
 	if ((version!=131328)||(strcmp(name,"Logitech Logitech Extreme 3D")!=0))
     	{
@@ -55,7 +57,7 @@ int joy_open(void)
 		exit(1);
 	}
 	
-	//printf("axes: %d buttons: %d\n", axes, buttons);
+	printf("axes: %d buttons: %d\n", axes, buttons);
 
 	axis = calloc(axes, sizeof(int));
 	button = calloc(buttons, sizeof(char));

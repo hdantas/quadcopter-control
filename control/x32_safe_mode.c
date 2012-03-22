@@ -8,8 +8,8 @@
 void safe_mode_ctrl(void)
 {
 // safe mode (mode 0) the ES sends commands to the QR to shutdown the engines.
-	roll = 0;
-	pitch = 0;
-	yaw = 0;
-	lift = 0;
+	oo1=0;
+	oo2=0;
+	oo3=0;
+	oo4=0;
 }
