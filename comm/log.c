@@ -6,15 +6,15 @@
 #include "log.h"
 #include "serial.h"
 #define FILENAME_LOG "log.txt"
+#define MAXLOGSIZE 0xFFFF
 
 void log_retrieve(void) {
 
 	FILE* fh;
 	unsigned char* logfile;
 	int i;
-
-	int logsize = 0xF0;
-	logfile = malloc(logsize);
+	int logsize = 0;
+	logfile = malloc(MAXLOGSIZE);
 
 	//Send logfile request
 	if (1 != serial_write('L')) {
@@ -22,9 +22,15 @@ void log_retrieve(void) {
 		return;
 	}
 	
-	for (i=0;i<logsize;) {
-		if (1 == serial_read(logfile+i))
+	i=0;
+	while(1) {
+		if (1 == serial_read(logfile+i)){
+			if (logfile[i] == 'X'){//X is termination character
+				logsize = i-1;
+				break;
+			}
 			i++;
+		}
 	}
 
 	printf("%s",logfile);

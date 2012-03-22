@@ -84,13 +84,12 @@ void log_retrieve(void) {
 	//Send data
 	i=0;
 	result=0;
-	logindex = 0xF0;
+	logfile[logindex] = 'X'; //append X to logfile has a termination character
 /*	Returns 1 if byte was written successfully, 0 if busy, -1 on error.*/
-	while (i < logindex) {
+	while (i <= logindex) {
 		result = serial_write(logfile[i]);
 		if (result == 0 || result == 1)
 			i++;
-		
 	}
 	
 /*	for(i=0; i < logindex;i++)*/
