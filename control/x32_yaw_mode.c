@@ -17,6 +17,4 @@ void yaw_mode_ctrl()
 	oo3 = ((SCALE_LIFT*lift) - (SCALE_YAW_ERROR*yaw_error)) >> 2;
 	oo4 = ((SCALE_LIFT*lift) + (SCALE_YAW_ERROR*yaw_error)) >> 2;
 
-/*	if (X32_ms_clock % 100 == 0)*/
-/*		printf("%d %d %d\n", yaw_error, yaw, s5);*/
 }

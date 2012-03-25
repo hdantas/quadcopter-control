@@ -12,4 +12,8 @@ void safe_mode_ctrl(void)
 	oo2=0;
 	oo3=0;
 	oo4=0;
+	
+	if (terminate)
+		finished = 1; //if program was asked to terminate set finished flag to return control to PC
+	
 }

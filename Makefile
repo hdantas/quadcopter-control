@@ -1,13 +1,13 @@
 all:
-	cd commtest; make
+	cd comm; make
 	cd control; make
     
-commtest:
-	cd commtest; make
+comm:
+	cd comm; make
 	
 control:
 	cd control; make
 	
 clean:
-	cd commtest; make clean
+	cd comm; make clean
 	cd control; make clean

@@ -6,7 +6,7 @@
 # $^ : The names of all the prerequisites, with spaces between the
 
 #######################  CONTROL  #######################
-INCLUDE_DIRECTORIES =../commtest ../control ../inputPC ../filter
+INCLUDE_DIRECTORIES =../comm ../control ../inputPC ../filter
 GCCDIR +=$(addprefix -I,$(INCLUDE_DIRECTORIES))
 
 vpath %.h $(INCLUDE_DIRECTORIES)

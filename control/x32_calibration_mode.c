@@ -13,10 +13,5 @@ void calibration_mode(void)
 	s3_bias = X32_QR_s3;
 	s4_bias = X32_QR_s4;
 	s5_bias = X32_QR_s5;
-
-	oo1=0;
-	oo2=0;
-	oo3=0;
-	oo4=0;
 	return;
 }
