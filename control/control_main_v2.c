@@ -45,7 +45,7 @@ int send_fire_button;
 int send_kb_button;
 comm_type type_c;
 
-int feedbackvalues[16];
+int feedbackvalues[19];
 int feedbacktype;
 
 void sigFunc(int sig) {
@@ -351,7 +351,8 @@ int main(void) {
 				printf("oo1:   %4d\too2:   %4d\too3:   %4d\too4:   %4d\n\n",feedbackvalues[5], feedbackvalues[6], feedbackvalues[7], feedbackvalues[8]);
 				printf("ax:    %4d\tay:    %4d\taz:    %4d\n\n", feedbackvalues[10], feedbackvalues[9], feedbackvalues[11]);
 				printf("gyrox: %4d\tgyroy: %4d\tgyroz: %4d\n\n", feedbackvalues[12], feedbackvalues[13], feedbackvalues[14]);
-				printf("control latency: %5d\n", feedbackvalues[15]);
+				printf("p_yaw: %4d\tp1_full: %4d\tp2_full: %4d\n\n", feedbackvalues[15], feedbackvalues[16], feedbackvalues[17]);
+				printf("control latency: %5d\n", feedbackvalues[18]);
 			
 				
 			}	

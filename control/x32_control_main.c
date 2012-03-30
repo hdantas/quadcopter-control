@@ -166,6 +166,13 @@ void main(void) {
 			else if (flag_feedback == 29)
 				tempvalue = s5;
 			else if (flag_feedback == 31)
+				tempvalue = p_yaw;
+			else if (flag_feedback == 33)
+				tempvalue = p1_full;
+			else if (flag_feedback == 35)
+				//tempvalue = p2_full;
+				tempvalue = 25;
+			else if (flag_feedback == 37)
 				tempvalue = control_latency_time;
 			
 			//Create a sendable data structure
@@ -184,7 +191,7 @@ void main(void) {
 			
 			//Reset flag
 			flag_feedback++;
-			if (flag_feedback >= 32)
+			if (flag_feedback >= 38)
 				flag_feedback = 0;
 		}
 
@@ -456,7 +463,7 @@ void isr_timer(void)
 	if (X32_ms_clock % 10 == 0) {
 		//Feedback
 		flag_feedback++;
-		if (flag_feedback >= 32)
+		if (flag_feedback >= 38)
 			flag_feedback = 0;
 	}
 	
