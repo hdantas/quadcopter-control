@@ -35,7 +35,6 @@ int len;		//lenght of packets
 
 void main(void) {
 
-	init_state();
 	 
 	SET_INTERRUPT_VECTOR(INTERRUPT_XUFO, &isr_qr_link);
 	SET_INTERRUPT_PRIORITY(INTERRUPT_XUFO, 21);
@@ -53,9 +52,14 @@ void main(void) {
 	SET_INTERRUPT_VECTOR(INTERRUPT_OUT_OF_MEMORY, &isr_out_of_memory);
 	SET_INTERRUPT_PRIORITY(INTERRUPT_OUT_OF_MEMORY, 40);
 
+	init_state();
+
 	//Initialise communication
 	if (0 != comm_init())
 		return;
+		
+	//Start logging
+	log_start();
 
 	ENABLE_INTERRUPT(INTERRUPT_GLOBAL);
 	ENABLE_INTERRUPT(INTERRUPT_OUT_OF_MEMORY);
@@ -72,6 +76,7 @@ void main(void) {
 		/*take data from the serial*/
 		if ( recv_data(&type, &data, &len) == 1) {
 			/*store the time of the last packet received, we use this value to check the pc link*/
+			X32_display = type;
 			time_last_packet=X32_us_clock;
 			/*elaboration of the data received*/
 			handleInput();
@@ -195,6 +200,7 @@ void handleInput (void) {
 						mode=SAFE;				
 					break;
 				case REQ_LOG: /*Request Logfile */
+					X32_display = 0xFFFF;
 					log_transmit();
 					break;		
 				case KEY0: /*Safe Mode*/

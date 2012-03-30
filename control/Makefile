@@ -43,7 +43,7 @@ qrcontrol: $(X32OBJECTS)
 	lcc-x32 -o qrcontrol.ce -I${X32INC} -I${X32LIBDIR} -Wl-lib $^
 
 upload: qrcontrol.ce
-	x32-upload qrcontrol.ce -c /dev/ttyUSB0
+	x32-upload qrcontrol.ce -c /dev/ttyUSB0 -e
 	
 clean:
 	rm -f *.o *.co

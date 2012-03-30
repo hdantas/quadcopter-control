@@ -28,11 +28,11 @@ void log_data(log_type type, unsigned char* data, int len) {
 	//Declare Variables
 	int I;
 	
-/*	printf("Log data: %i\t", type);
+	printf("Log data: %i\t", type);
 	for (I = 0; I < len; I++)
 		printf("%.02X ", data[I]);
 	printf("\n");
-*/	
+	
 }
 void log_msg(const char* msg) {
 	printf("Log message: %s\n", msg);
@@ -67,6 +67,8 @@ void retrieve_log() {
 	while (phase < 3) {
 		//Wait for character
 		while (0 == serial_read(&c));
+		
+		printf("Got here! 0x%.02X\n", c);
 		
 		if (phase == 1) {
 			//Process log size

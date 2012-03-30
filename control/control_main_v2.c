@@ -1,6 +1,8 @@
 #include "console_IO.h"
 #include "comm.h"
 #include "joystick.h"
+#include "log.h"
+#include "log_pc.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -165,6 +167,17 @@ int source_button(char c, comm_type *type_c)
 		case 'l':		/*roll/pitch control P2 down*/
 			*type_c=KEYL;
 			return 1;
+		case 'r':		/*retrieve logfile*/
+			*type_c=REQ_LOG;
+			printf("Marco!\n");
+			//Stop timer to make comm blocking
+		  	ualarm(0, 0);
+			retrieve_log();
+			// Restart timer
+			signal(SIGALRM, sigFunc);
+			ualarm(TIME_INTERRUPT, 0);
+			printf("Polo!\n");
+			return 0;
 		default:
 			printf("key not mapped error\n");
 			return -1;	//key not map
@@ -284,7 +297,7 @@ int main(void) {
 		clip_RPYL(RPYL_value,5);
 
 		
-		printf("roll: %d pitch: %d yaw: %d lift: %d\n", RPYL_data[0],RPYL_data[1],RPYL_data[2],RPYL_data[3]);
+		//printf("roll: %d pitch: %d yaw: %d lift: %d\n", RPYL_data[0],RPYL_data[1],RPYL_data[2],RPYL_data[3]);
 
 		//printf("roll: %d pitch: %d yaw: %d lift: %d\n", kb_RPYL[0],kb_RPYL[1],js_RPYL[3],kb_RPYL[3]);
 			
@@ -306,6 +319,9 @@ int main(void) {
 		}
 
 	}
+	
+	/* stop timer */
+  	ualarm(0, 0);
 
 	printf("Exiting...\n");
 
