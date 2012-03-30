@@ -2,7 +2,7 @@
 #include "x32_log.h"
 #include "x32_common.h"
 //#include "convert.h"
-//#include "comm.h"
+#include "comm.h"
 #include "serial.h"
 
 #include <stdlib.h>
@@ -12,13 +12,15 @@ void displayData(unsigned char* data, int len);
 
 
 #define X32_ms_clock		peripherals[PERIPHERAL_MS_CLOCK]
+#define X32_us_clock		peripherals[PERIPHERAL_US_CLOCK]
 #define X32_int_enable		peripherals[PERIPHERAL_INT_ENABLE]
 #define X32_leds			peripherals[PERIPHERAL_LEDS]
 #define X32_display			peripherals[PERIPHERAL_DISPLAY]
 
 
-//Global log file (64kB)
-#define LOG_FILE_SIZE	0xFFFF
+//Global log file (~400kB)
+#define LOG_FILE_SIZE	0x5FFFF
+#define LOG_FILE_LIMIT	LOG_FILE_SIZE - 128
 unsigned char logfile[LOG_FILE_SIZE];
 int logindex = 0;
 char logflag = 0;
@@ -75,7 +77,7 @@ void write_to_log(log_type type, unsigned char* data, int len) {
 	
 	//Write timestamp
 	//TODO: Shorter?
-	timestamp = X32_ms_clock;
+	timestamp = X32_us_clock;
 
 	logfile[logindex] = (timestamp >> 24) & 0x000000FF;
 	logindex++;
@@ -95,6 +97,10 @@ void write_to_log(log_type type, unsigned char* data, int len) {
 		memcpy(&logfile[logindex], data, len);
 		logindex += len;
 	}
+	
+	//Stop logging once file is full
+	if (logindex >= LOG_FILE_LIMIT)
+		logflag = 0;
 	
 	//Exit critical section
 	if (reenable)
@@ -190,7 +196,7 @@ void log_data(log_type type, unsigned char* data, int len) {
 	
 	//Write timestamp
 	//TODO: Shorter?
-	timestamp = X32_ms_clock;
+	timestamp = X32_us_clock;
 
 	logfile[logindex] = (timestamp >> 24) & 0x000000FF;
 	logindex++;
@@ -206,14 +212,20 @@ void log_data(log_type type, unsigned char* data, int len) {
 	logindex += 1;
 	
 	//Write length
-	logfile[logindex] = len;
-	logindex += 1;
+	if (type >= LOG_TYPE_DATA_VAR) {
+		logfile[logindex] = len;
+		logindex += 1;
+	}
 
 	//Write data
 	if (len > 0) {
 		memcpy(&logfile[logindex], data, len);
 		logindex += len;
 	}
+	
+	//Stop logging once file is full
+	if (logindex >= LOG_FILE_LIMIT)
+		logflag = 0;
 	
 	//Exit critical section
 	if (reenable)
@@ -265,16 +277,24 @@ void log_byte(unsigned char c) {
 */
 void log_transmit() {
 	//Declare Variables
+	int time;
 	int phase;
 	int I;
 	unsigned char c;
 
 	//Log a transmit event
 	log_event(LOG_TRANSMIT);
+	
+	//Send acknowledgement
+	send_data(REQ_LOG, 0, 0);
 
 	//Stop logging to prevent logfile corruption
 	log_event(LOG_STOP);
 	logflag = 0;
+	
+	//Delay to allow time for PC-side processing (100ms)
+	time = X32_ms_clock;
+	while (X32_ms_clock < time+100);
 
 	//Initialize
 	phase = 1;
@@ -286,7 +306,6 @@ void log_transmit() {
 			c = (logindex >> (24 - I * 8)) & 0x000000FF;
 			I++;
 			if (I == 4) {
-				X32_display = logindex;
 				I = 0;
 				phase++;
 			}

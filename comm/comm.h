@@ -3,7 +3,7 @@
 
 //Packet types
 #define COMM_TYPE_SIZE_0	0
-#define COMM_TYPE_SIZE_1	32
+#define COMM_TYPE_SIZE_1	35
 #define COMM_TYPE_SIZE_4	40
 #define COMM_TYPE_SIZE_8	50
 #define	COMM_TYPE_SIZE_16	60
@@ -36,6 +36,8 @@ typedef enum {
 	KEYESC,
 	KEYRETURN,
 	REQ_LOG,
+	HANDSHAKE,
+	UNAVAILABLE,
 
 	// Modes
 	SAFE,
@@ -54,6 +56,7 @@ typedef enum {
 	LOG_SIZE		= COMM_TYPE_SIZE_8,			//8-byte sized body
 	REQ_LOG_CHUNK,
 	DEBUG_INT,
+	FEEDBACK_DATA,
 
 	LOG_CHUNK	 	= COMM_TYPE_SIZE_16,		//16-byte sized body
 	TEXT_CHUNK,

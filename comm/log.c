@@ -21,18 +21,18 @@ void log_int(int value) {
 //	printf("Log int: %i\n", value);
 }
 void log_byte(unsigned char c) {
-	printf("Log byte: %.02X\n", c);
+//	printf("Log byte: %.02X\n", c);
 }
 
 void log_data(log_type type, unsigned char* data, int len) {
 	//Declare Variables
-	int I;
+/*	int I;
 	
 	printf("Log data: %i\t", type);
 	for (I = 0; I < len; I++)
 		printf("%.02X ", data[I]);
 	printf("\n");
-	
+*/	
 }
 void log_msg(const char* msg) {
 	printf("Log message: %s\n", msg);
@@ -41,9 +41,13 @@ void log_msg(const char* msg) {
 /*
 	Retrieves logfile from QR and stores on disk in binary format
 	Blocking and ugly
+	Returns 0 on success, -1 otherwise
 */
-void retrieve_log() {
+int retrieve_log() {
 	//Declare Variables
+	comm_type type;
+	unsigned char* data;
+	int len;
 	unsigned int logsize;
 	unsigned char* logfile;
 	FILE* fh;
@@ -54,10 +58,25 @@ void retrieve_log() {
 	//Send logfile request
 	if (0 != send_data(REQ_LOG, 0, 0)) {
 		printf("Error sending log request\n");
-		return;
+		return -1;
 	}
 	
-	printf("Waiting for logfile size\n");
+	//Wait for ready to send
+	while (1) {
+		if (1 == recv_data(&type, &data, &len)) {
+			//Discard data
+			free(data);
+			//Process data
+			if (type == REQ_LOG)
+				//Ready
+				break;
+			else if (type == UNAVAILABLE)
+				//Not ready
+				return -1;
+		}
+	}
+	
+//	printf("Waiting for logfile size\n");
 	
 	//Initialize
 	phase = 1;
@@ -67,8 +86,6 @@ void retrieve_log() {
 	while (phase < 3) {
 		//Wait for character
 		while (0 == serial_read(&c));
-		
-		printf("Got here! 0x%.02X\n", c);
 		
 		if (phase == 1) {
 			//Process log size
@@ -94,23 +111,23 @@ void retrieve_log() {
 	}
 
 	//Logfile read completely
-	printf("Successfully acquired logfile\n");
+//	printf("Successfully acquired logfile\n");
 
 	//Parse it
-	printf("Parsing logfile...\n");
+//	printf("Parsing logfile...\n");
 	parse_log(logfile, logsize);
-	printf("Done parsing logfile.\n");
+//	printf("Done parsing logfile.\n");
 
 	//Output raw logfile to file
 	fh = fopen(FILENAME_LOG_RAW, "w");
 	if (fh == 0) {
 		printf("Error opening %s.\n", FILENAME_LOG_RAW);
-		return;
+		return -1;
 	}
 	//TODO:Limit write chunk size
 	if (0 == fwrite(logfile, 1, logsize, fh)) {
 		printf("Error writing to file.\n");
-		return;
+		return -1;
 	}
 	fclose(fh);
 
@@ -127,7 +144,9 @@ void retrieve_log() {
 
 	//Free memory
 	free(logfile);
-	printf("Got here!\n");
+//	printf("Got here!\n");
+
+	return 0;
 }
 
 /*
@@ -210,6 +229,17 @@ void parse_log(unsigned char* logfile, int logsize) {
 				sprintf(outputstr, "0x%.08X = %i", value, value);
 				fputs(outputstr, fh);
 				logindex += 4;
+			} else if (type == LOG_VALUES) {
+				//Loop through 16 stored integers
+				for (I = 0; I < 16; I++) {
+					//Write integer to file in both decimal and hex representations
+					memcpy(&value, &logfile[logindex], 4);
+					value = other_endian(value);
+	//				value = make_int(&logfile[logindex]);
+					sprintf(outputstr, "%i\t", value);
+					fputs(outputstr, fh);
+					logindex += 4;
+				}
 			}
 
 		} else if (type >= LOG_TYPE_EVENT) {
@@ -246,6 +276,8 @@ const char* logtype_to_string(log_type type) {
 			return "LOG_BYTE";
 		case LOG_INT:
 			return "LOG_INT";
+		case LOG_VALUES:
+			return "LOG_VALUES";
 
 		//Events with data
 		case LOG_RECV_PACKET:

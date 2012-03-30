@@ -45,6 +45,9 @@ int send_fire_button;
 int send_kb_button;
 comm_type type_c;
 
+int feedbackvalues[16];
+int feedbacktype;
+
 void sigFunc(int sig) {
 
 	if (send_kb_button) {
@@ -169,14 +172,16 @@ int source_button(char c, comm_type *type_c)
 			return 1;
 		case 'r':		/*retrieve logfile*/
 			*type_c=REQ_LOG;
-			printf("Marco!\n");
 			//Stop timer to make comm blocking
 		  	ualarm(0, 0);
-			retrieve_log();
+		  	printf("Retrieving log...\n");
+			if (0 == retrieve_log())
+				printf("Successfully acquired logfile.\n");
+			else
+				printf("Unable to retrieve logfile.\n");
 			// Restart timer
 			signal(SIGALRM, sigFunc);
 			ualarm(TIME_INTERRUPT, 0);
-			printf("Polo!\n");
 			return 0;
 		default:
 			printf("key not mapped error\n");
@@ -225,7 +230,11 @@ int main(void) {
 	kb_RPYL[0]=kb_RPYL[1]=kb_RPYL[2]=kb_RPYL[3]=KB_SHIFT;
 
 	for (i=0;i<4;i++)
-		js_RPYL[i]=0;//TODO
+		js_RPYL[i]=0;
+		
+	//Initialize feedback data
+	for (i=0;i<16;i++)
+		feedbackvalues[i] = 0;
 	
 	
 	//Initialise communication
@@ -234,13 +243,27 @@ int main(void) {
 
 	term_initio();
 
-	//joy_open();
+//	joy_open();
 
 	 /* set up our signal handler to catch SIGALRM */
   	signal(SIGALRM, sigFunc);
 
   	/* start the timer - we want to send packets every 10 ms */
   	ualarm(TIME_INTERRUPT, 0);
+  	
+  	//Send handshake
+  	send_data(HANDSHAKE, 0, 0);
+	
+	
+			
+
+		//TODO:remove
+	//Initialize
+	js_RPYL[0] = 64;
+	js_RPYL[1] = 64;
+	js_RPYL[2] = 64;
+	js_RPYL[3] = 0;
+
 	
 
 	while(!quit) {
@@ -254,7 +277,7 @@ int main(void) {
 		}
 		
 	
-		/*if(read_joy()!= 0) 
+/*		if(read_joy()!= 0) 
 			{
 				//printf("%d\n", axis[2]);
 
@@ -272,8 +295,8 @@ int main(void) {
 				//press fire button
 				if (button[0]==1)				
 					send_fire_button=1;					
-			}*/
-
+			}
+*/
 
 			
 		
@@ -281,6 +304,7 @@ int main(void) {
 		RPYL_value[1]=js_RPYL[1]+kb_RPYL[1] + RPYL_SHIFT;
 		RPYL_value[2]=js_RPYL[2]+kb_RPYL[2] + RPYL_SHIFT;
 		RPYL_value[3]=js_RPYL[3]+kb_RPYL[3] + RPYL_SHIFT;
+
 		
 		if (RPYL_value[0] <= 0) RPYL_value[0] = 0;
 		if (RPYL_value[0] >= KB_MAX) RPYL_value[0] = KB_MAX;
@@ -290,7 +314,7 @@ int main(void) {
 		if (RPYL_value[2] >= KB_MAX) RPYL_value[2] = KB_MAX;
 		if (RPYL_value[3] <= 0) RPYL_value[3] = 0;
 		if (RPYL_value[3] >= KB_MAX) RPYL_value[3] = KB_MAX;
-
+		
 		for (i=0;i<4;i++)
 			RPYL_data[i]=(unsigned char) RPYL_value[i];
 
@@ -302,9 +326,9 @@ int main(void) {
 		//printf("roll: %d pitch: %d yaw: %d lift: %d\n", kb_RPYL[0],kb_RPYL[1],js_RPYL[3],kb_RPYL[3]);
 			
 		oldroll=RPYL_data[0];
-		oldpitch=RPYL_data[0];
-		oldyaw=RPYL_data[0];
-		oldlift=RPYL_data[0];
+		oldpitch=RPYL_data[1];
+		oldyaw=RPYL_data[2];
+		oldlift=RPYL_data[3];
 
 
 		if(1 == recv_data(&type, &data, &len)) 
@@ -312,6 +336,24 @@ int main(void) {
 			if (type==KEYESC)
 			{
 				quit=1;
+			} else if (type == FEEDBACK_DATA) {
+				//Interpret feedback data
+				//Retrieve type
+				feedbacktype = (data[5]-1)/2;
+				data[5] = 0;
+				//Make integer out of data structure
+				feedbackvalues[feedbacktype] = make_int_swap(data);
+				
+				//Update 'GUI'
+				system("clear");
+				printf("mode:  %1d\n\n", feedbackvalues[0]);
+				printf("roll:  %4d\tpitch: %4d\tyaw:   %4d\tlift:  %4d\n\n",feedbackvalues[1], feedbackvalues[2], feedbackvalues[3], feedbackvalues[4]);
+				printf("oo1:   %4d\too2:   %4d\too3:   %4d\too4:   %4d\n\n",feedbackvalues[5], feedbackvalues[6], feedbackvalues[7], feedbackvalues[8]);
+				printf("ax:    %4d\tay:    %4d\taz:    %4d\n\n", feedbackvalues[10], feedbackvalues[9], feedbackvalues[11]);
+				printf("gyrox: %4d\tgyroy: %4d\tgyroz: %4d\n\n", feedbackvalues[12], feedbackvalues[13], feedbackvalues[14]);
+				printf("control latency: %5d\n", feedbackvalues[15]);
+			
+				
 			}	
 		
 			//Free buffer memory again (IMPORTANT!)
@@ -326,7 +368,7 @@ int main(void) {
 	printf("Exiting...\n");
 
 	term_exitio();
-	//joy_close();
+//	joy_close();
 	//Uninitialise
 	comm_uninit();
 	return 0;

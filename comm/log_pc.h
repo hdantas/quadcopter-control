@@ -3,7 +3,7 @@
 
 #include "log.h"
 
-void retrieve_log();
+int retrieve_log();
 void parse_log(unsigned char* logfile, int logsize);
 const char* logtype_to_string(log_type type);
 

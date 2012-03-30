@@ -3,6 +3,7 @@
 
 #include "x32_common.h"
 #include "comm.h"
+#include "convert.h"
 #include "x32_modes.h"
 #include "filter.h"
 #include "log.h"
@@ -17,6 +18,7 @@ comm_type type;		//header of packets
 volatile int finished;	//end of program
 
 int flag_data_loggin;	//data loggin is ready
+int flag_feedback;	//ready to send feedback to PC
 
 unsigned int time_last_packet;	//used to check pc link
 int counter_pc_link;	//used like multiple of timer
@@ -33,9 +35,36 @@ int p1_full, p2_full;	//proportional controls value of full control
 unsigned char* data;	//body of packets
 int len;		//lenght of packets
 
+int datalogbuffer[16];	//Array to efficiently add values to log
+int tempvalue;
+unsigned char* feedbackbuffer; //Buffer to convert integers for transmission
+int feedbacklen;
+
 void main(void) {
 
-	 
+	init_state();
+
+	//Initialise communication
+	if (0 != comm_init())
+		return;
+		
+	//Start logging
+	log_start();
+
+	ENABLE_INTERRUPT(INTERRUPT_GLOBAL);
+
+	//Wait for handshake
+	X32_display = 0x1111;
+	while (0 == recv_data(&type, &data, &len));
+	X32_display = 0x0000;
+	if (type != HANDSHAKE)
+		//Stop immediately
+		finished = 1;
+	else
+		//Ready to start
+		finished = 0;
+
+
 	SET_INTERRUPT_VECTOR(INTERRUPT_XUFO, &isr_qr_link);
 	SET_INTERRUPT_PRIORITY(INTERRUPT_XUFO, 21);
 	ENABLE_INTERRUPT(INTERRUPT_XUFO);
@@ -52,19 +81,9 @@ void main(void) {
 	SET_INTERRUPT_VECTOR(INTERRUPT_OUT_OF_MEMORY, &isr_out_of_memory);
 	SET_INTERRUPT_PRIORITY(INTERRUPT_OUT_OF_MEMORY, 40);
 
-	init_state();
-
-	//Initialise communication
-	if (0 != comm_init())
-		return;
-		
-	//Start logging
-	log_start();
-
-	ENABLE_INTERRUPT(INTERRUPT_GLOBAL);
 	ENABLE_INTERRUPT(INTERRUPT_OUT_OF_MEMORY);
 
-	finished=0;
+
 
 
 	while (!finished)
@@ -76,28 +95,105 @@ void main(void) {
 		/*take data from the serial*/
 		if ( recv_data(&type, &data, &len) == 1) {
 			/*store the time of the last packet received, we use this value to check the pc link*/
-			X32_display = type;
 			time_last_packet=X32_us_clock;
 			/*elaboration of the data received*/
 			handleInput();
 			free(data);
 		}
+		
+		//Display mode
+		X32_display = mode-SAFE;
 
-		/*send data loggin on PC*/
+		/*Log data*/
 		if (flag_data_loggin == 1){
-			/*printf("%c", 7);	//reserved character for refreshing the screen
-			printf("mode:  %1d\n\n", mode-26);
-			printf("roll:  %4d\tpitch: %4d\tyaw:   %4d\tlift:  %4d\n\n",roll, pitch, yaw, lift);
-			printf("oo1:   %4d\too2:   %4d\too3:   %4d\too4:   %4d\n\n",oo1, oo2, oo3, oo4);
-			printf("ax:    %4d\tay:    %4d\taz:    %4d\n\n",s1, s0, s2);
-			printf("gyrox: %4d\tgyroy: %4d\tgyroz: %4d\n\n", s3, s4, s5);
-			printf("control latency: %5d", control_latency_time);
-			flag_data_loggin=0;*/
+			//Fill temporary data structure
+			datalogbuffer[0] = mode - SAFE;
+			datalogbuffer[1] = roll;
+			datalogbuffer[2] = pitch;
+			datalogbuffer[3] = yaw;
+			datalogbuffer[4] = lift;
+			datalogbuffer[5] = oo1;
+			datalogbuffer[6] = oo2;
+			datalogbuffer[7] = oo3;
+			datalogbuffer[8] = oo4;
+			datalogbuffer[9] = s0;
+			datalogbuffer[10] = s1;
+			datalogbuffer[11] = s2;
+			datalogbuffer[12] = s3;
+			datalogbuffer[13] = s4;
+			datalogbuffer[14] = s5;
+			datalogbuffer[15] = control_latency_time;
+			//Write to log
+			log_data(LOG_VALUES, (unsigned char*) datalogbuffer, 16*4);
+			//Reset log flag
+			flag_data_loggin=0;
+		}
+		
+		//Send feedback to PC if flag is odd
+		if (flag_feedback & 0x01) {
+		
+			/* Critical section */
+			DISABLE_INTERRUPT(INTERRUPT_GLOBAL);
+			
+			if (flag_feedback == 1)
+				tempvalue = mode - SAFE;
+			else if (flag_feedback == 3)
+				tempvalue = roll;
+			else if (flag_feedback == 5)
+				tempvalue = pitch;
+			else if (flag_feedback == 7)
+				tempvalue = yaw;
+			else if (flag_feedback == 9)
+				tempvalue = lift;
+			else if (flag_feedback == 11)
+				tempvalue = oo1;
+			else if (flag_feedback == 13)
+				tempvalue = oo2;
+			else if (flag_feedback == 15)
+				tempvalue = oo3;
+			else if (flag_feedback == 17)
+				tempvalue = oo4;
+			else if (flag_feedback == 19)
+				tempvalue = s0;
+			else if (flag_feedback == 21)
+				tempvalue = s1;
+			else if (flag_feedback == 23)
+				tempvalue = s2;
+			else if (flag_feedback == 25)
+				tempvalue = s3;
+			else if (flag_feedback == 27)
+				tempvalue = s4;
+			else if (flag_feedback == 29)
+				tempvalue = s5;
+			else if (flag_feedback == 31)
+				tempvalue = control_latency_time;
+			
+			//Create a sendable data structure
+			make_int_sendable(tempvalue, &feedbackbuffer, &feedbacklen);
+			//Add type (ugly)
+			feedbackbuffer[5] = flag_feedback;
+			
+			/* End of critical section */
+			ENABLE_INTERRUPT(INTERRUPT_GLOBAL);
+			
+			//Send the data
+			send_data(FEEDBACK_DATA, feedbackbuffer, 8);
+			
+			//Free buffer
+			free(feedbackbuffer);
+			
+			//Reset flag
+			flag_feedback++;
+			if (flag_feedback >= 32)
+				flag_feedback = 0;
 		}
 
 	}
 	/*reserved character for stop the program on PC*/
 //	printf("%c", 11);
+	
+	//Secret handshake to notify PC of quitting
+	send_data(KEYESC, 0, 0);
 
 	//Uninitialise
 	X32_leds=0;
@@ -122,6 +218,7 @@ void init_state(void)
 	counter_pc_link=0;
 	isr_qr_time=0;
 	flag_data_loggin=0;
+	flag_feedback = 0;
 	calibration_mode();
 }
 
@@ -183,43 +280,56 @@ void handleInput (void) {
 		return;
 	}
 
-	
+	//Check for engines stopped
+	if ((oo1==0) && (oo2==0) && (oo3==0) && (oo4==0)) {
+		if (type == KEYESC) {
+			//Terminate
+			finished=1;
+			mode=SAFE;				
+		} else if (type == REQ_LOG) {
+			//Disable all interrupts that result in traffic
+			DISABLE_INTERRUPT(INTERRUPT_TIMER1);
+			//Send log
+			log_transmit();
+			//Reenable interrupts
+			ENABLE_INTERRUPT(INTERRUPT_TIMER1);
+		}
+	} else {
+		if (type == REQ_LOG) {
+			//Not clear to send
+			send_data(UNAVAILABLE, 0, 0);
+		}
+	}
+		
 	//Change control
 	//only if the set points are zero and the output of engine are null
 	if ((oo1==0) && (oo2==0) && (oo3==0) && (oo4==0) && (lift==0) && (roll==0) && (pitch==0) && (yaw==0))
 	{		
 	  	switch (type) {			
-				case KEYESC: /* ESC: abort / exit */				
-					finished=1;
+					
+			case KEYRETURN: /*increment control mode */
+				if (mode != FULL)
+					mode++;
+				else
 					mode=SAFE;				
-					break;		
-				case KEYRETURN: /*increment control mode */
-					if (mode != FULL)
-						mode++;
-					else
-						mode=SAFE;				
-					break;
-				case REQ_LOG: /*Request Logfile */
-					X32_display = 0xFFFF;
-					log_transmit();
-					break;		
-				case KEY0: /*Safe Mode*/
-					mode=SAFE;
-					break;
-				case KEY2: /*Manual Mode*/
-					mode=MANUAL;	
-					break;										
-				case KEY3: /*Calibration Mode*/
-					mode=CALIBRATION;
-					break;					
-				case KEY4: /*Yaw control Mode*/
-					mode=YAW;
-					break;
-				case KEY5: /*Full control mode*/
-					mode=FULL;
-					break;
-				default:
-					break;
+				break;	
+			case KEY0: /*Safe Mode*/
+				mode=SAFE;
+				break;
+			case KEY2: /*Manual Mode*/
+				mode=MANUAL;
+				break;
+			case KEY3: /*Calibration Mode*/
+				mode=CALIBRATION;
+				break;					
+			case KEY4: /*Yaw control Mode*/
+				mode=YAW;
+				break;
+			case KEY5: /*Full control mode*/
+				mode=FULL;
+				break;
+			default:
+				break;
 		}
 
 		/*reset filters parameters*/
@@ -338,9 +448,18 @@ void isr_timer(void)
 	//every 100 ms we set the flag on for data loggin (10 Hz)
 
 	if (X32_ms_clock % 100 == 0) {
-		if (flag_data_loggin == 0)
-			flag_data_loggin=1;
+		//Log
+		flag_data_loggin=1;
 	}
+	
+	//every 10ms we set the flag to send feedback to PC (100Hz)
+	if (X32_ms_clock % 10 == 0) {
+		//Feedback
+		flag_feedback++;
+		if (flag_feedback >= 32)
+			flag_feedback = 0;
+	}
+	
 }
 
 //overflow
@@ -358,7 +477,8 @@ void isr_out_of_memory(void)
 	//log and flag error
 	X32_leds |= 0x20;
 	//printf("Out of memory\r");
-	mode = PANIC;
+	if (mode != SAFE)
+		mode = PANIC;
 }
 
 
@@ -368,7 +488,8 @@ void check_pc_link(void)
 {
 	if (time_last_packet!=0) {
 		if (X32_us_clock-time_last_packet>TIME_OUT_LINK) {
-			mode=PANIC;
+			if (mode != SAFE)
+				mode=PANIC;
 			X32_leds&=253; //1111 1101
 		}
 		else
