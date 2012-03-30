@@ -9,31 +9,32 @@
 void panic_mode_ctrl(void)
 {
 
-	int average;
+	int avarage;
 
 	if (X32_ms_clock % 50 == 0){
 		// Reduce by REDUNCING_RPM* motor* RPM until a predefined minumum
-		// Stabilize QR by setting all motors with the same value
-		average=(oo1+oo2+oo3+oo4)>>2;
-
-		oo1=average;
-		oo2=average;
-		oo3=average;
-		oo4=average;
 		
-		if (average > MIN_MOTORS) {
-			oo1 -= REDUCING_RPM;
-			oo2 -= REDUCING_RPM;
-			oo3 -= REDUCING_RPM;
-			oo4 -= REDUCING_RPM;
-		}
+		avarage=(oo1+oo2+oo3+oo4) >> 2;
+
+		oo1=avarage;
+		oo2=avarage;
+		oo3=avarage;
+		oo4=avarage;
+		
+		if (oo1 > MIN_OO1)
+			oo1 -= REDUCING_OO1;
+		if (oo2 > MIN_OO2)
+			oo2 -= REDUCING_OO2;
+		if (oo3 > MIN_OO3)
+			oo3 -= REDUCING_OO3;
+		if (oo4 > MIN_OO4)
+			oo4 -= REDUCING_OO4;
 	}
 
 	
 	//if all motor are below a certain RPM move to safe mode
-	if ((oo1 <= MIN_MOTORS) && (oo2 <= MIN_MOTORS) && (oo3 <= MIN_MOTORS) && (oo4 <= MIN_MOTORS)){
+	if ((oo1 <= MIN_OO1) && (oo2 <= MIN_OO2) && (oo3 <= MIN_OO3) && (oo4 <= MIN_OO4))
 		mode = SAFE;
-		terminate = 1;
-	}
+
 	
 }

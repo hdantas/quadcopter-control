@@ -56,6 +56,7 @@ typedef enum {
 	DEBUG_INT,
 
 	LOG_CHUNK	 	= COMM_TYPE_SIZE_16,		//16-byte sized body
+	TEXT_CHUNK,
 
 	RANDOM_DATA		= COMM_TYPE_SIZE_VAR		//variable sized body
 } comm_type;
@@ -65,6 +66,7 @@ int comm_init();
 void comm_uninit();
 int send_data(comm_type type, unsigned char* data, int len);
 int recv_data(comm_type* type, unsigned char** data, int* len);
+int send_text(const char* text);
 
 
 //Frame helpers

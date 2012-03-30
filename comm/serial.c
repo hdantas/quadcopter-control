@@ -2,6 +2,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdio.h>
 
 //On linux, use serial connection /dev/ttyS0, or /dev/ttyUSB0 for USB-to-serial cable
 #define SERIAL_DEVICE	"/dev/ttyUSB0"

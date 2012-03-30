@@ -3,14 +3,21 @@
 #include "joystick.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <sys/time.h>
+#include <unistd.h>
+
 //#define JS_SENSITIVITY 512
-#define KB_SHIFT 0
+#define KB_SHIFT 64
 #define KB_MAX 127
+#define KB_MAX_LIFT 191
 #define JS_SHIFT 32768
+#define RPYL_SHIFT 0
 
 #define TRESHOLD 20000
 
 #define JS_SLOPE -0.0128
+#define JS_SLOPE_LIFT -0.004
 
 #define JS_SENSITIVITY_ROLL 512
 #define JS_SENSITIVITY_PITCH 512
@@ -21,13 +28,44 @@
 #define JS_SENSITIVITY_CEILING_PITCH 256
 #define JS_SENSITIVITY_CEILING_YAW 256
 #define JS_SENSITIVITY_CEILING_LIFT 256
+#define TIME_INTERRUPT 10000
 
 int js_sensitivity[4] = {JS_SENSITIVITY_ROLL, JS_SENSITIVITY_PITCH, JS_SENSITIVITY_YAW, JS_SENSITIVITY_LIFT};
 extern int *axis;		//vector for axes values
 extern char *button;		//vector for button value
 int kb_RPYL[4];
 int js_RPYL[4];
+int RPYL_value[4];
+unsigned char RPYL_data[4];
 int oldroll,oldpitch,oldyaw,oldlift;
+
+int send_fire_button;
+int send_kb_button;
+comm_type type_c;
+
+void sigFunc(int sig) {
+
+	if (send_kb_button) {
+		if (0 != send_data(type_c, 0, 0))
+			printf("Error sending buttons\n");
+
+		send_kb_button=0;
+	}
+
+	if (send_fire_button) {
+		if (0 != send_data(KEY1, 0, 0))
+			printf("Error sending buttons\n");
+
+		send_fire_button=0;
+	}
+
+	if (0 != send_data(RPYL, RPYL_data, 4))
+		printf("Error sending joystick\n");
+	
+
+	/* reset the timer so we get called again in 10 ms */
+	ualarm(TIME_INTERRUPT, 0);
+}
 
 //gcc -o main main.c comm.c checksum.c serial.c convert.c joy_function.c console_IO.c
 
@@ -68,13 +106,13 @@ int source_button(char c, comm_type *type_c)
 		case 'a':		/* increase lift */
 			printf("Increase lift mode\n");
 			*type_c=KEYA;
-			if(kb_RPYL[3]<KB_MAX)
+			if(kb_RPYL[3]<KB_MAX_LIFT)
 				kb_RPYL[3]+= 1;
 			return 0;
 		case 'z':		/* decrease lift */
 			printf("Decrease lift mode\n");
 			*type_c=KEYZ;
-			if(kb_RPYL[3]>0)
+			if(kb_RPYL[3]>KB_SHIFT)
 				kb_RPYL[3]-=1;
 			return 0;
 		case 0x43:		/*right arrow: roll down maybe*/
@@ -160,22 +198,19 @@ void clip_RPYL(int *RPYL_data,int limit_rate)
 
 int main(void) {
 	//Declare variables
-	int RPYL_value[4];
 	comm_type type;
 	unsigned char* data;
-	unsigned char RPYL_data[4];
-	int len;
 	int i;
-	int exit;
+	int len;
+	int quit;
 	char c;
-	comm_type type_c;
 	
 	oldroll=oldpitch=oldyaw=oldlift=0;
 
-	exit=0;
+	quit=0;
 
-	kb_RPYL[0]=kb_RPYL[1]=kb_RPYL[2]=KB_SHIFT;
-	kb_RPYL[3]=0;
+	kb_RPYL[0]=kb_RPYL[1]=kb_RPYL[2]=kb_RPYL[3]=KB_SHIFT;
+
 	for (i=0;i<4;i++)
 		js_RPYL[i]=0;//TODO
 	
@@ -186,79 +221,53 @@ int main(void) {
 
 	term_initio();
 
-	joy_open();
+	//joy_open();
+
+	 /* set up our signal handler to catch SIGALRM */
+  	signal(SIGALRM, sigFunc);
+
+  	/* start the timer - we want to send packets every 10 ms */
+  	ualarm(TIME_INTERRUPT, 0);
 	
 
-	while(!exit) {
+	while(!quit) {
 
 		if ((c = term_getchar_nb()) != -1) 
 		{
 			//press a key button	
 			if (source_button(c, &type_c)==1)
-			{
-				if (0 != send_data(type_c, 0, 0))
-				{
-					printf("Error sending buttons\n");
-					break;
-				}
-			}
+				send_kb_button=1;
 
 		}
 		
 	
-		if(read_joy()!= 0) 
+		/*if(read_joy()!= 0) 
 			{
 				//printf("%d\n", axis[2]);
 
-				if (abs(axis[0])<TRESHOLD)
-					js_sensitivity[0]=JS_SLOPE*(abs(axis[0]))+JS_SENSITIVITY_ROLL;
-				else
-					js_sensitivity[0]=JS_SENSITIVITY_CEILING_ROLL;
+				js_sensitivity[0]=JS_SLOPE*(abs(axis[0]))+JS_SENSITIVITY_ROLL;
+				js_sensitivity[1]=JS_SLOPE*(abs(axis[1]))+JS_SENSITIVITY_PITCH;
+				js_sensitivity[2]=JS_SLOPE*(abs(axis[2]))+JS_SENSITIVITY_YAW;
+				js_sensitivity[3]=JS_SLOPE_LIFT*(JS_SHIFT-axis[3])+JS_SENSITIVITY_LIFT;
 
-				
-				if (abs(axis[1])<TRESHOLD)
-					js_sensitivity[1]=JS_SLOPE*(abs(axis[1]))+JS_SENSITIVITY_PITCH;
-				else
-					js_sensitivity[1]=JS_SENSITIVITY_CEILING_PITCH;
-
-				if (abs(axis[2])<TRESHOLD)
-					js_sensitivity[2]=JS_SLOPE*(abs(axis[2]))+JS_SENSITIVITY_YAW;
-				else
-					js_sensitivity[2]=JS_SENSITIVITY_CEILING_YAW;
-
-				if (abs(axis[3])<TRESHOLD)
-					js_sensitivity[3]=JS_SLOPE*(abs(axis[3]))+JS_SENSITIVITY_LIFT;
-				else
-					js_sensitivity[3]=JS_SENSITIVITY_CEILING_LIFT;
 								
-				js_RPYL[0] = (axis[0]+JS_SHIFT) / js_sensitivity[0];
-				js_RPYL[1] = (axis[1]+JS_SHIFT) / js_sensitivity[1];
-				js_RPYL[2] = (axis[2]+JS_SHIFT) / js_sensitivity[2];
-				js_RPYL[3] = -(axis[3]-JS_SHIFT)/ js_sensitivity[3];
+				js_RPYL[0] = axis[0] / js_sensitivity[0];
+				js_RPYL[1] = axis[1] / js_sensitivity[1];
+				js_RPYL[2] = axis[2] / js_sensitivity[2];
+				js_RPYL[3] = -axis[3]/ js_sensitivity[3];
 				
-				//printf(" Roll %d %d \t Pitch %d %d \t Yaw %d %d \t Lift %d %d\n",js_sensitivity[0], js_RPYL[0],js_sensitivity[1],js_RPYL[1],js_sensitivity[2],js_RPYL[2],js_sensitivity[3],js_RPYL[3]);
-
-
-				//printf("axis[2]: %d js_RPYL[2]: %d\n", axis[2], js_RPYL[2]);
-
 				//press fire button
-				if (button[0]==1)//TODO
-				{					
-					if (0 != send_data(KEY1, 0, 0))
-					{
-						printf("Error sending buttons\n");
-						break;
-					}
-				}
-			}
+				if (button[0]==1)				
+					send_fire_button=1;					
+			}*/
 
 
 			
 		
-		RPYL_value[0]=js_RPYL[0]+kb_RPYL[0];
-		RPYL_value[1]=js_RPYL[1]+kb_RPYL[1];
-		RPYL_value[2]=js_RPYL[2]+kb_RPYL[2];
-		RPYL_value[3]=js_RPYL[3]+kb_RPYL[3];
+		RPYL_value[0]=js_RPYL[0]+kb_RPYL[0] + RPYL_SHIFT;
+		RPYL_value[1]=js_RPYL[1]+kb_RPYL[1] + RPYL_SHIFT;
+		RPYL_value[2]=js_RPYL[2]+kb_RPYL[2] + RPYL_SHIFT;
+		RPYL_value[3]=js_RPYL[3]+kb_RPYL[3] + RPYL_SHIFT;
 		
 		if (RPYL_value[0] <= 0) RPYL_value[0] = 0;
 		if (RPYL_value[0] >= KB_MAX) RPYL_value[0] = KB_MAX;
@@ -276,38 +285,32 @@ int main(void) {
 
 		
 		printf("roll: %d pitch: %d yaw: %d lift: %d\n", RPYL_data[0],RPYL_data[1],RPYL_data[2],RPYL_data[3]);
-	
+
+		//printf("roll: %d pitch: %d yaw: %d lift: %d\n", kb_RPYL[0],kb_RPYL[1],js_RPYL[3],kb_RPYL[3]);
 			
-		if (0 != send_data(RPYL, RPYL_data, 4))
-		{
-			printf("Error sending joystick\n");
-			break;		
-		}
-		
 		oldroll=RPYL_data[0];
 		oldpitch=RPYL_data[0];
 		oldyaw=RPYL_data[0];
 		oldlift=RPYL_data[0];
 
-		usleep(10000);
 
-		/*if(1 == recv_data(&type, &data, &len)) 
+		if(1 == recv_data(&type, &data, &len)) 
 		{		
 			if (type==KEYESC)
 			{
-				exit=1;
+				quit=1;
 			}	
 		
 			//Free buffer memory again (IMPORTANT!)
 			free(data);
-		}*/
+		}
 
 	}
 
 	printf("Exiting...\n");
 
 	term_exitio();
-	joy_close();
+	//joy_close();
 	//Uninitialise
 	comm_uninit();
 	return 0;

@@ -13,13 +13,14 @@ vpath %.h $(INCLUDE_DIRECTORIES)
 vpath %.c $(INCLUDE_DIRECTORIES)
 
 
-#PCSOURCES = control_main.c serial.c log.c comm.c checksum.c convert.c console_IO.c joy_function.c
-PCSOURCES = control_main.c serial.c comm.c checksum.c convert.c console_IO.c joy_function.c
+
+#PCSOURCES = control_main_v3.c serial.c comm.c checksum.c convert.c console_IO.c joy_function.c
+PCSOURCES = control_main_v2.c log.c serial.c comm.c checksum.c convert.c console_IO.c joy_function.c
 PCOBJECTS = $(PCSOURCES:.c=.o)
 
-X32SOURCES = x32_control_main.c x32_kalman.c x32_serial.c comm.c checksum.c \
+X32SOURCES = x32_control_main.c x32_log.c x32_kalman.c x32_serial.c comm.c checksum.c \
 	     convert.c x32_manual_mode.c x32_full_mode.c \
-	     x32_calibration_mode.c x32_panic_mode.c x32_safe_mode.c x32_yaw_mode.c
+	     x32_calibration_mode.c x32_panic_mode.c x32_safe_mode.c x32_yaw_mode.c x32_butterworth.c
 X32OBJECTS = $(X32SOURCES:.c=.co)
 
 
@@ -42,7 +43,7 @@ qrcontrol: $(X32OBJECTS)
 	lcc-x32 -o qrcontrol.ce -I${X32INC} -I${X32LIBDIR} -Wl-lib $^
 
 upload: qrcontrol.ce
-	x32-upload qrcontrol.ce -c /dev/ttyUSB0 -e
+	x32-upload qrcontrol.ce -c /dev/ttyUSB0
 	
 clean:
 	rm -f *.o *.co

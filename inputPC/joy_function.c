@@ -49,15 +49,13 @@ int joy_open(void)
 	ioctl(fd_JOY, JSIOCGBUTTONS, &buttons);
 	ioctl(fd_JOY, JSIOCGNAME(NAME_LENGTH), name);
 
-	printf("%d %s",version, name);
-
+	//check if the joystick plug is right
 	if ((version!=131328)||(strcmp(name,"Logitech Logitech Extreme 3D")!=0))
     	{
 		perror("version and device name don't match");
 		exit(1);
 	}
 	
-	printf("axes: %d buttons: %d\n", axes, buttons);
 
 	axis = calloc(axes, sizeof(int));
 	button = calloc(buttons, sizeof(char));
@@ -94,7 +92,7 @@ int	read_joy()
 					break;
 				case JS_EVENT_AXIS:
 					axis[js.number] = js.value;
-					axis[js.number]=axis[js.number]; //joy has +-32768 values,  +-32768/512=+-64 values and so 128 values (7 bits)
+					axis[js.number]=axis[js.number]; //joy has +-32767 values,  +-32767/512=+-64 values and so 128 values (7 bits)
 					axis_move=1;
 					break;
 			}
@@ -106,8 +104,6 @@ int	read_joy()
 			perror("\njstest: error reading");
 			exit (1);
 		}
-	//if (button[0] == 1)
-		//printf("Press");
 
 	if ((button_press==0)&&(axis_move==0))	//no read
 		return 0;

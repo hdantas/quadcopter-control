@@ -4,13 +4,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-void printbytes(void* p);
 //void printbin(unsigned char c);
+
+void test();
 
 /*
 	in		start of input
-	len		number of bytes to put in chunk (<=CHUNK_SIZE_8BIT)
-	out		output buffer, should be CHUNK_SIZE_7BIT bytes
+	len		number of bytes to put in chunk
+	out		output buffer, should be predefined with length multiple of CHUNK_LEN_7BIT
 */
 void convert8to7bitchunk(unsigned char* in, int len, unsigned char* out) {
 	//Declare variables
@@ -39,9 +40,9 @@ void convert8to7bitchunk(unsigned char* in, int len, unsigned char* out) {
 		}
 	}
 
-	if (len < CHUNK_SIZE_8BIT) {
+	if (len % CHUNK_SIZE_8BIT > 0) {
 		//Calculate missing bytes for complete chunk
-		I = (CHUNK_SIZE_8BIT - len) % 7;
+		I = CHUNK_SIZE_8BIT - (len % CHUNK_SIZE_8BIT);
 		//Shift remainder in proper position
 		remainder >>= I;
 		//Add to proper place in output buffer
@@ -53,18 +54,23 @@ void convert8to7bitchunk(unsigned char* in, int len, unsigned char* out) {
 	in		input buffer, should be CHUNK_SIZE_7BIT bytes
 	out		output buffer, should be CHUNK_SIZE_8BIT bytes
 */
-void convert7to8bitchunk(unsigned char* in, unsigned char* out) {
+void convert7to8bitchunk(unsigned char* in, int len, unsigned char* out) {
 	//Declare variables
 	int I, J;
 	int K;
 	unsigned char remainder;
+	
+	//Verify length
+	if (len % CHUNK_SIZE_7BIT > 0) 
+		//TODO: Throw error or smth?
+		return;
 
 	//Initialize
-	K = CHUNK_SIZE_8BIT-1;
+	K = get7to8bitchunklen(len) - 1;
 	remainder = 0;
 
 	//Loop through bytes from right to left
-	for (I = CHUNK_SIZE_7BIT-1; I >= 0; I--) {
+	for (I = len-1; I >= 0; I--) {
 		//Initialize remainder
 		if (I % 8 == 7) {
 			remainder = in[I];
@@ -89,21 +95,71 @@ unsigned int other_endian(unsigned int value) {
 		((value << 8) & 0x00FF0000) |
 		(value << 24);
 }
+
 /*
-	Make an integer out of a 4byte char array and change endianness
+	Make an integer out of a CHUNK_SIZE_7BIT char array;
+		change endianness for _swap versions
 */
 unsigned int make_int(unsigned char* buffer) {
 	//Declare Variables
+	unsigned char data[CHUNK_SIZE_8BIT];
 	unsigned int value;
-	//Copy buffer to int variable
-	memcpy(&value, buffer, 4);
+	//Convert from sendable format
+	convert7to8bitchunk(buffer, CHUNK_SIZE_7BIT, data);
+	//Copy int variable
+	memcpy(&value, &data, 4);
+	//Change endianness and return
+	return value;
+}
+void make_int_sendable(unsigned int value, unsigned char** buffer, int* len) {
+	//Declare Variables
+	unsigned char intbuffer[4];
+	
+	//Create buffer
+	*len = get8to7bitchunklen(4);
+	*buffer = malloc(*len);
+	memset(*buffer, 0, *len);
+	
+	//Convert to sendable format
+	memcpy(intbuffer, &value, 4);
+	convert8to7bitchunk(intbuffer, 4, *buffer);
+}
+unsigned int make_int_swap(unsigned char* buffer) {
+	//Declare Variables
+	unsigned char data[CHUNK_SIZE_8BIT];
+	unsigned int value;
+	//Convert from sendable format
+	convert7to8bitchunk(buffer, CHUNK_SIZE_7BIT, data);
+	//Copy int variable
+	memcpy(&value, &data, 4);
 	//Change endianness and return
 	return (value >> 24) |
 			((value >> 8) & 0x0000FF00) |
 			((value << 8) & 0x00FF0000) |
 			(value << 24);
 }
+void make_int_sendable_swap(unsigned int value, unsigned char** buffer, int* len) {
+	//Declare Variables
+	unsigned char intbuffer[4];
+	
+	//Create buffer
+	*len = get8to7bitchunklen(4);
+	*buffer = malloc(*len);
+	memset(*buffer, 0, *len);
+	
+	//Change endianness
+	value = (value >> 24) |
+			((value >> 8) & 0x0000FF00) |
+			((value << 8) & 0x00FF0000) |
+			(value << 24);
+	
+	//Convert to sendable format
+	memcpy(intbuffer, &value, 4);
+	convert8to7bitchunk(intbuffer, 4, *buffer);
+}
 
+
+/*
 //Nasty way to compress most of an integer, losing 4 MSB
 int convert8to7bitint(int value) {
 	return ((value & 0x0FE00000) << 3) |
@@ -117,15 +173,71 @@ int convert7to8bitint(int value) {
 			((value & 0x00007F00) >> 1) |
 			(value & 0x0000007F);
 }
-
-void printbytes(void* p) {
+*/
+void printbytes(unsigned char* data, int len) {
 	int I;
-	unsigned char c;
-	for (I = 0; I < 4; I++) {
-		c = *((unsigned char*)p+I);
-		printf("%.02X ", c);
-	}
+	for (I = 0; I < len; I++)
+		printf("%.02X ", data[I]);
 }
+/*
+void main(void) {
+	//Declare Variables
+	unsigned char buffer1[CHUNK_SIZE_8BIT];
+	unsigned char buffer2[CHUNK_SIZE_7BIT];
+	unsigned char buffer3[CHUNK_SIZE_8BIT];
+	
+	int errorcount;
+	int I, J;
+	char match;
+	
+	//Initialise random numbers
+	srand(time(NULL));
+	
+	printf("Testing...\n");
+	
+	errorcount = 0;
+	for (I = 0; I < 1000000; I++) {
+		//Create random data
+		for (J = 0; J < CHUNK_SIZE_8BIT; J++) {
+			buffer1[J] = rand() % 256;
+		}
+		
+		for (J = 0; J < CHUNK_SIZE_8BIT; J++)
+			printf("%.02X ", buffer1[J]);
+		printf("\t");
+		
+		//Convert hither
+		convert8to7bitchunk(buffer1, CHUNK_SIZE_8BIT, buffer2);
+		
+		for (J = 0; J < CHUNK_SIZE_7BIT; J++)
+			printf("%.02X ", buffer2[J]);
+		printf("\t");
+		
+		//Convert yon
+		convert7to8bitchunk(buffer2, CHUNK_SIZE_7BIT, buffer3);
+		
+		//Check if buffers match
+		match = 1;
+		for (J = 0; J < CHUNK_SIZE_8BIT; J++)
+			if (buffer1[J] != buffer3[J])
+				match = 0;
+		
+		if (match == 1) {
+			printf("Correct\n");
+		} else {
+			errorcount++;
+			printf("Error\n");
+			for (J = 0; J < CHUNK_SIZE_8BIT; J++)
+				printf("%.02X ", buffer3[J]);
+			printf("\n");
+		}
+		
+	}
+	
+	printf("Completed tests with %i errors\n", errorcount);
+	
+}
+*/
 /*
 void printbin(int c) {
 	int I;

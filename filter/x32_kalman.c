@@ -4,17 +4,12 @@
 #include "x32_common.h"
 #include "comm.h"
 #include "x32_modes.h"
-#include "kalman.h"
-
-//p s3 gyro x
-//phi s0 accelerometer y
-//q gyro y s4
-//theta s1 accelerometer x
+#include "filter.h"
 
 
 int q_bias_pitch, q_kalman_pitch, theta_kalman_pitch, theta_error_pitch;
 int p_bias_roll, p_kalman_roll,phi_kalman_roll,phi_error_roll;
-int p2phi; //should be a constant because the last equation is wrong
+int p2phi;
 
 void reset_kalman(void)
 {
