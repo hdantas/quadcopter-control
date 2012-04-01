@@ -1,0 +1,5 @@
+To run, run 'make' from the terminal on the root folder.
+The makefile will take care of compiling, uploading and starting the program.
+To clean temporary and binary files, run 'make clean' 
+
+Team G
