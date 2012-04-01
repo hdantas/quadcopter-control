@@ -1,3 +1,5 @@
+% Author: Enrico Caruso
+
 load data.dat;
 t = 1: size(data,1);
 phi = data(:,1)-515;

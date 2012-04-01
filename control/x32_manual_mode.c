@@ -5,9 +5,8 @@
 #include "comm.h"
 #include "x32_modes.h"
 
-/*
-In manual mode (mode 2) the ES simply passes on lift, roll, pitch, and yaw
-*/
+/* In manual mode (mode 2) the ES simply passes on lift, roll, pitch, and yaw
+* Author: Henrique Dantas */
 
 void manual_mode_ctrl(void)
 {

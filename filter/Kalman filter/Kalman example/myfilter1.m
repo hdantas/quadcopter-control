@@ -1,3 +1,5 @@
+% Author: Enrico Caruso
+
 % 1st-order Butterworth - fc 25 Hz at fs 500 Hz
 nmax = 100;
 n = (1:nmax);

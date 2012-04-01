@@ -13,9 +13,7 @@ vpath %.h $(INCLUDE_DIRECTORIES)
 vpath %.c $(INCLUDE_DIRECTORIES)
 
 
-
-#PCSOURCES = control_main_v3.c serial.c comm.c checksum.c convert.c console_IO.c joy_function.c
-PCSOURCES = control_main_v2.c log.c serial.c comm.c checksum.c convert.c console_IO.c joy_function.c
+PCSOURCES = control_main.c log.c serial.c comm.c checksum.c convert.c console_IO.c joy_function.c
 PCOBJECTS = $(PCSOURCES:.c=.o)
 
 X32SOURCES = x32_control_main.c x32_log.c x32_kalman.c x32_serial.c comm.c checksum.c \
@@ -46,4 +44,4 @@ upload: qrcontrol.ce
 	x32-upload qrcontrol.ce -c /dev/ttyUSB0 -e
 	
 clean:
-	rm -f *.o *.co
+	rm -f *.o *.co *.ce pccontrol

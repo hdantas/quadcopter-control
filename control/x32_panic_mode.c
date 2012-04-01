@@ -5,22 +5,23 @@
 #include "comm.h"
 #include "x32_modes.h"
 
-
+/* Author: Henrique Dantas */
 void panic_mode_ctrl(void)
 {
 
-	int avarage;
+	int average;
 
-	if (X32_ms_clock % 50 == 0){
-		// Reduce by REDUNCING_RPM* motor* RPM until a predefined minumum
-		
-		avarage=(oo1+oo2+oo3+oo4) >> 2;
+	//Reduce engien RPM envery 50ms, otherwise it goes down too quickly
+	if (X32_ms_clock % 50 == 0){	
+		//Average the motors to make descent vertical
+		average=(oo1+oo2+oo3+oo4) >> 2;
 
-		oo1=avarage;
-		oo2=avarage;
-		oo3=avarage;
-		oo4=avarage;
+		oo1=average;
+		oo2=average;
+		oo3=average;
+		oo4=average;
 		
+		// Reduce by REDUNCING_RPM*motor* until a predefined minumum
 		if (oo1 > MIN_OO1)
 			oo1 -= REDUCING_OO1;
 		if (oo2 > MIN_OO2)

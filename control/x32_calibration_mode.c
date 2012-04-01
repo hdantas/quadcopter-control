@@ -5,6 +5,7 @@
 #include "comm.h"
 #include "x32_modes.h"
 
+/* Author: Henrique Dantas */
 void calibration_mode(void)
 {
 	//read and store sensore value

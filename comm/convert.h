@@ -23,8 +23,6 @@ void make_int_sendable(unsigned int value, unsigned char** buffer, int* len);
 unsigned int make_int_swap(unsigned char* buffer);
 void make_int_sendable_swap(unsigned int value, unsigned char** buffer, int* len);
 
-
-//TODO: Remove
 void printbytes(unsigned char* data, int len);
 
 #endif

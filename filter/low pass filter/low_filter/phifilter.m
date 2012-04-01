@@ -1,3 +1,5 @@
+% Author: Enrico Caruso
+
 clear all;
 load filterphi.dat;
 phi=filterphi(:,1);

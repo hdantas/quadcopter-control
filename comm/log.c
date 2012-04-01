@@ -135,7 +135,6 @@ int retrieve_log() {
 		printf("Error opening %s.\n", FILENAME_LOG_RAW);
 		return -1;
 	}
-	//TODO:Limit write chunk size
 	if (0 == fwrite(logfile, 1, logsize, fh)) {
 		printf("Error writing to file.\n");
 		return -1;
@@ -265,12 +264,6 @@ void parse_log(unsigned char* logfile, int logsize) {
 	//Close file
 	fclose(fh);
 	
-	/*
-	//Send an acknowledgement
-	if (0 != send_data(ACK, 0, 0))
-		//TODO: 
-		return;
-	*/
 }
 /*	Convert the enumerated type of a log entry to string
  *	Author: Maurijn Neumann

@@ -6,7 +6,7 @@
 #include "x32_modes.h"
 #include "filter.h"
 	
-	
+/* Author: Enrico Caruso */	
 void full_mode_ctrl(void)
 {
 	//overflow detaction	

@@ -5,7 +5,7 @@
 #define phi_b 515
 #define scale 200
 
-
+/*Author: Enrico Caruso*/
 int main () {
     FILE *fp, *fpout;
     int phi[lenght_max], theta, p, saz, sq, sr;

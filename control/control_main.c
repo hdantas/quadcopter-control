@@ -3,50 +3,32 @@
 #include "joystick.h"
 #include "log.h"
 #include "log_pc.h"
+#include "pc_modes.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/time.h>
 #include <unistd.h>
 
-//#define JS_SENSITIVITY 512
-#define KB_SHIFT 64
-#define KB_MAX 127
-#define KB_MAX_LIFT 191
-#define JS_SHIFT 32768
-#define RPYL_SHIFT 0
-
-#define TRESHOLD 20000
-
-#define JS_SLOPE -0.0128
-#define JS_SLOPE_LIFT -0.004
-
-#define JS_SENSITIVITY_ROLL 512
-#define JS_SENSITIVITY_PITCH 512
-#define JS_SENSITIVITY_YAW 512
-#define JS_SENSITIVITY_LIFT 512
-
-/*#define JS_SENSITIVITY_CEILING_ROLL 256*/
-/*#define JS_SENSITIVITY_CEILING_PITCH 256*/
-/*#define JS_SENSITIVITY_CEILING_YAW 256*/
-/*#define JS_SENSITIVITY_CEILING_LIFT 256*/
-#define TIME_INTERRUPT 10000
-
-int js_sensitivity[4] = {JS_SENSITIVITY_ROLL, JS_SENSITIVITY_PITCH, JS_SENSITIVITY_YAW, JS_SENSITIVITY_LIFT};
+int js_sensitivity[4] = {JS_SENSITIVITY_ROLL, JS_SENSITIVITY_PITCH, JS_SENSITIVITY_YAW, JS_SENSITIVITY_LIFT}; //array that controls the sensitivity of the keyboard
 extern int *axis;		//vector for axes values
 extern char *button;		//vector for button value
-int kb_RPYL[4];
-int js_RPYL[4];
-int RPYL_value[4];
-unsigned char RPYL_data[4];
-int oldroll,oldpitch,oldyaw,oldlift;
+int kb_RPYL[4];		//array to store roll pitch yaw and lift (RPYL) data from the keyboard.
+int js_RPYL[4];		//array to store roll pitch yaw and lift (RPYL) data from the joystick.
+int RPYL_value[4];	//temp array for clipping RPYL values
+unsigned char RPYL_data[4]; //array that holds the data that goes to QR
+int oldroll,oldpitch,oldyaw,oldlift; //vars for rate limiting
 
 int send_fire_button;
 int send_kb_button;
-comm_type type_c;
+comm_type type_c; //type_c saves the type of info to send, see report for more info on the protocol
 
-int feedbackvalues[19];
-int feedbacktype;
+int feedbackvalues[19]; //information from the nexys to update the GUI
+int feedbacktype; //type of values from the QR necessary to update GUI
+
+/*Send various information from input sources to QR
+* This function is called every 10 ms
+* Author: Enrico Caruso */
 
 void sigFunc(int sig) {
 
@@ -67,12 +49,12 @@ void sigFunc(int sig) {
 	if (0 != send_data(RPYL, RPYL_data, 4))
 		printf("Error sending joystick\n");
 	
-
-	/* reset the timer so we get called again in 10 ms */
+	/* reset the timer interrupt so we get called again in 10 ms */
 	ualarm(TIME_INTERRUPT, 0);
 }
 
-
+/*Map keyboard inputs with the correct comm_type
+* Author: Henrique Dantas */
 int source_button(char c, comm_type *type_c) 
 {	
 	switch (c) 
@@ -183,12 +165,14 @@ int source_button(char c, comm_type *type_c)
 			ualarm(TIME_INTERRUPT, 0);
 			return 0;
 		default:
-			printf("key not mapped error\n");
+			printf("Key not mapped error\n");
 			return -1;	//key not map
 	}
 }
 
-void clip_RPYL(int *RPYL_data,int limit_rate)
+/* Rate clippling
+* Author: Enrico Caruso */
+void clip_RPYL(int limit_rate)
 {
 	if(RPYL_data[0]>(oldroll+limit_rate))
 		RPYL_data[0]=oldroll+limit_rate;
@@ -212,7 +196,7 @@ void clip_RPYL(int *RPYL_data,int limit_rate)
 }
 			
 
-
+/* Author: Enrico Caruso*/
 int main(void) {
 	//Declare variables
 	comm_type type;
@@ -222,10 +206,9 @@ int main(void) {
 	int quit;
 	char c;
 	
+	//Initialize variables
 	oldroll = oldpitch = oldyaw = oldlift = 0;
-
 	quit = 0;
-
 	kb_RPYL[0] = kb_RPYL[1] = kb_RPYL[2] = kb_RPYL[3] = KB_SHIFT;
 
 	for (i=0;i<4;i++)
@@ -240,9 +223,11 @@ int main(void) {
 	if (0 != comm_init())
 		return -1;
 
+	//grab terminal input
 	term_initio();
-
-//	joy_open();
+	
+	//start joystick
+	joy_open();
 
 	 /* set up our signal handler to catch SIGALRM */
   	signal(SIGALRM, sigFunc);
@@ -253,23 +238,9 @@ int main(void) {
   	//Send handshake
   	send_data(HANDSHAKE, 0, 0);
 	
-	
-			
-
-	//TODO:remove
-	//Initialize
-	js_RPYL[0] = 0;
-	js_RPYL[1] = 0;
-	js_RPYL[2] = 0;
-	js_RPYL[3] = 0;
-
-	kb_RPYL[0] = 0;
-	kb_RPYL[1] = 0;
-	kb_RPYL[2] = 0;
-	kb_RPYL[3] = 0;
 
 	while(!quit) {
-
+		//read terminal input
 		if ((c = term_getchar_nb()) != -1) 
 		{
 			//press a key button	
@@ -278,17 +249,16 @@ int main(void) {
 
 		}
 		
-	
-/*		if(read_joy()!= 0) 
+		//update joystick values
+		if(read_joy()!= 0) 
 			{
-				//printf("%d\n", axis[2]);
-
+				// calculate the sensitivity to improve the joystick movement
 				js_sensitivity[0]=JS_SLOPE*(abs(axis[0]))+JS_SENSITIVITY_ROLL;
 				js_sensitivity[1]=JS_SLOPE*(abs(axis[1]))+JS_SENSITIVITY_PITCH;
 				js_sensitivity[2]=JS_SLOPE*(abs(axis[2]))+JS_SENSITIVITY_YAW;
 				js_sensitivity[3]=JS_SLOPE_LIFT*(JS_SHIFT-axis[3])+JS_SENSITIVITY_LIFT;
 
-								
+				// divide the joystick values by sensitivity 		
 				js_RPYL[0] = axis[0] / js_sensitivity[0];
 				js_RPYL[1] = axis[1] / js_sensitivity[1];
 				js_RPYL[2] = axis[2] / js_sensitivity[2];
@@ -298,9 +268,10 @@ int main(void) {
 				if (button[0]==1)				
 					send_fire_button=1;					
 			}
-*/
 
-			
+
+
+		/* sum joystick value with keyboard offset */		
 		
 		RPYL_value[0] = js_RPYL[0] + kb_RPYL[0] + RPYL_SHIFT;
 		RPYL_value[1] = js_RPYL[1] + kb_RPYL[1] + RPYL_SHIFT;
@@ -320,21 +291,17 @@ int main(void) {
 		for (i=0;i<4;i++)
 			RPYL_data[i] = (unsigned char) RPYL_value[i];
 
-		clip_RPYL(RPYL_value,5);
+		clip_RPYL(5);
 
-		
-		//printf("roll: %d pitch: %d yaw: %d lift: %d\n", RPYL_data[0],RPYL_data[1],RPYL_data[2],RPYL_data[3]);
-
-		//printf("roll: %d pitch: %d yaw: %d lift: %d\n", kb_RPYL[0],kb_RPYL[1],js_RPYL[3],kb_RPYL[3]);
-			
 		oldroll = RPYL_data[0];
 		oldpitch = RPYL_data[1];
 		oldyaw = RPYL_data[2];
 		oldlift = RPYL_data[3];
 
-
+		//Handle data from nexys
 		if(1 == recv_data(&type, &data, &len)) 
-		{		
+		{	
+			//ESC terminates the PC side	
 			if (type==KEYESC)
 			{
 				quit=1;
@@ -369,9 +336,9 @@ int main(void) {
 
 	printf("Exiting...\n");
 
-	term_exitio();
-//	joy_close();
 	//Uninitialise
+	term_exitio();
+	joy_close();
 	comm_uninit();
 	return 0;
 }

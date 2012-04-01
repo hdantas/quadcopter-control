@@ -10,14 +10,14 @@
 #include "x32_log.h"
 
 
-int lift, roll, pitch, yaw;		//value received from the serial
+int lift, roll, pitch, yaw;		//values received from the serial
 int oldoo1, oldoo2, oldoo3, oldoo4;	//old values of engine, usefull to avoid stall
 int lift_error, roll_error, pitch_error, yaw_error;	//signals of the control
 comm_type mode;		//mode of the QR
 comm_type type;		//header of packets
 volatile int finished;	//end of program
 
-int flag_data_loggin;	//data loggin is ready
+int flag_data_logging;	//data loggin is ready
 int flag_feedback;	//ready to send feedback to PC
 
 unsigned int time_last_packet;	//used to check pc link
@@ -40,8 +40,9 @@ int tempvalue;
 unsigned char* feedbackbuffer; //Buffer to convert integers for transmission
 int feedbacklen;
 
+/*Author: Henrique Dantas*/
 void main(void) {
-
+	//initialize variables
 	init_state();
 
 	//Initialise communication
@@ -92,21 +93,21 @@ void main(void) {
 		check_pc_link();
 		check_qr_link();
 
-		/*take data from the serial*/
+		/*read data from the serial link*/
 		if ( recv_data(&type, &data, &len) == 1) {
 			/*store the time of the last packet received, we use this value to check the pc link*/
 			time_last_packet=X32_us_clock;
-			/*elaboration of the data received*/
+			/*handle data received*/
 			handleInput();
 			free(data);
 		}
 		
 		//Display mode
-/*		X32_display = mode-SAFE;*/
-		X32_display = roll;
+		X32_display = mode-SAFE;
+
 		
 		/*Log data*/
-		if (flag_data_loggin == 1){
+		if (flag_data_logging == 1){
 			//Fill temporary data structure
 			datalogbuffer[0] = mode - SAFE;
 			datalogbuffer[1] = roll;
@@ -127,7 +128,7 @@ void main(void) {
 			//Write to log
 			log_data(LOG_VALUES, (unsigned char*) datalogbuffer, 16*4);
 			//Reset log flag
-			flag_data_loggin=0;
+			flag_data_logging=0;
 		}
 		
 		//Send feedback to PC if flag is odd
@@ -177,7 +178,7 @@ void main(void) {
 			
 			//Create a sendable data structure
 			make_int_sendable(tempvalue, &feedbackbuffer, &feedbacklen);
-			//Add type (ugly)
+			//Add type
 			feedbackbuffer[5] = flag_feedback;
 			
 			/* End of critical section */
@@ -196,19 +197,17 @@ void main(void) {
 		}
 
 	}
-	/*reserved character for stop the program on PC*/
-//	printf("%c", 11);
 	
-	//Secret handshake to notify PC of quitting
+	//Handshake to notify PC of quitting
 	send_data(KEYESC, 0, 0);
 
-	//Uninitialise
+	//Uninitialize
 	X32_leds=0;
 	comm_uninit();
 }
 
-// Initialization of all the variable
-
+/* Initialization of all the variable
+* Author: Henrique Dantas */
 void init_state(void)
 {
 	lift = roll = pitch = yaw = 0;
@@ -224,13 +223,13 @@ void init_state(void)
 	time_last_packet=0;
 	counter_pc_link=0;
 	isr_qr_time=0;
-	flag_data_loggin=0;
+	flag_data_logging=0;
 	flag_feedback = 0;
 	calibration_mode();
 }
 
-//elaboration of received data
-
+/*elaboration of received data
+* Author: Henrique Dantas*/
 void handleInput (void) {
 	if (type == KEY1) {	//request to go on panic mode
 		mode = PANIC;
@@ -303,7 +302,7 @@ void handleInput (void) {
 		}
 	} else {
 		if (type == REQ_LOG) {
-			//Not clear to send
+			//Not clear to send since motors are not stopped
 			send_data(UNAVAILABLE, 0, 0);
 		}
 	}
@@ -312,8 +311,7 @@ void handleInput (void) {
 	//only if the set points are zero and the output of engine are null
 	if ((oo1==0) && (oo2==0) && (oo3==0) && (oo4==0) && (lift==0) && (roll==0) && (pitch==0) && (yaw==0))
 	{		
-	  	switch (type) {			
-					
+	  	switch (type) {								
 			case KEYRETURN: /*increment control mode */
 				if (mode != FULL)
 					mode++;
@@ -352,7 +350,7 @@ void handleInput (void) {
 }
 
 //this function choose the control
-
+/* Author Henrique Dantas */
 void handleMode (void) {
 
 //we store the old engine value and we use them to avoid stall
@@ -393,11 +391,12 @@ void handleMode (void) {
 }
 
 
-/*QR link rx interrupt handler */
-
+/*QR link rx interrupt handler
+* Author: Henrique Dantas */
 void isr_qr_link(void)
 {
-	/* get sensor values */
+	/* get sensor values 
+	* It was discovered that some sensors need to be inverted*/
 	s0 = X32_QR_s0 - s0_bias;
 	s1 = -(X32_QR_s1 - s1_bias); 
 	s2 = X32_QR_s2 - s2_bias; 
@@ -409,23 +408,23 @@ void isr_qr_link(void)
 	isr_qr_time=X32_QR_timestamp;
 }
 
-//interrupt for 1000 Hz engine control
-
+/*interrupt for 1000 Hz engine control
+* Author: Enrico Caruso */
 void isr_timer(void)
 {
 	//measure the latency of control
 	start_time=X32_us_clock;
 
-	//we use this like multiple of timer
+	//used to check if pc link is up
 	counter_pc_link++;
 
-	//control
+	//call the corresponding function according to var mode
 	handleMode();
 
 	//clip the engine value
 	clip_AE();
 
-	//usefull when you are the QR on your hands and there is some control	
+	//safety procedure: when lift is zero nothing else should turn
 	if (lift == 0){
 		oo1 = 0;
 		oo2 = 0;
@@ -434,14 +433,12 @@ void isr_timer(void)
 	}
 
 	//set engine values		
-
 	X32_QR_a0 = oo1;
 	X32_QR_a1 = oo2;
 	X32_QR_a2 = oo3;
 	X32_QR_a3 = oo4;
 
 	//blink led if the program is running
-
 	if(counter_pc_link==BLINK_COUNT)
 		if(!finished) {
 			toggle_led(0);
@@ -449,14 +446,12 @@ void isr_timer(void)
 		}
 
 	//store the control latency
-
 	control_latency_time=X32_us_clock-start_time;
 
-	//every 100 ms we set the flag on for data loggin (10 Hz)
-
+	//every 100 ms we set the flag on for data logging (10 Hz)
 	if (X32_ms_clock % 100 == 0) {
 		//Log
-		flag_data_loggin=1;
+		flag_data_logging=1;
 	}
 	
 	//every 10ms we set the flag to send feedback to PC (100Hz)
@@ -469,28 +464,26 @@ void isr_timer(void)
 	
 }
 
-//overflow
-
+/* overflow service routine
+* Author Henrique Dantas */
 void isr_overflow(void)
 {
-	toggle_led(7);
-	mode=PANIC;
+	//if it is already in safe dont do anything
+	if (mode != SAFE)
+		mode=PANIC;
 }
 
-//out of memory
-
+/*out of memory service routine
+* Author Henrique Dantas */
 void isr_out_of_memory(void)
 {
-	//log and flag error
-	X32_leds |= 0x20;
-	//printf("Out of memory\r");
 	if (mode != SAFE)
 		mode = PANIC;
 }
 
 
-//check pc link
-
+/*check pc link
+* Author: Enrico Caruso */
 void check_pc_link(void)
 {
 	if (time_last_packet!=0) {
@@ -505,26 +498,27 @@ void check_pc_link(void)
 	}
 }
 
-//check qr link
-
+/*check qr link
+* Author: Enrico Caruso */
 void check_qr_link(void)
 {
 	if (isr_qr_time!=0) {
 		if (X32_us_clock-isr_qr_time>TIME_OUT_QR_INT) {
-			//mode=PANIC;
+			if (mode != SAFE)
+				mode=PANIC;
 			X32_leds&=251; //1111 1011
 		}
 		else
-			X32_leds|=4;
-			
+			X32_leds|=4;			
 	}
 }
 
+/*Motor clipping, both rate and absolute
+* Author: Enrico Caruso */
 void clip_AE()
 {
 
 	//clip max and min values	
-
 	if((mode==YAW) || (mode==FULL) || (mode==MANUAL)) { //in calibration and safe engine values are null
 
 		if (oo1 < MIN_MOTOR1) oo1 = MIN_MOTOR1;
@@ -563,8 +557,8 @@ void clip_AE()
 
 }
 
-//toggle led
-
+/* toggle led, shortcut for lazy people
+* Author: Henrique Dantas */
 void toggle_led(int i) 
 {
 	X32_leds = (X32_leds ^ (1 << i));

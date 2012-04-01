@@ -64,7 +64,6 @@ void convert7to8bitchunk(unsigned char* in, int len, unsigned char* out) {
 	
 	//Verify length
 	if (len % CHUNK_SIZE_7BIT > 0) 
-		//TODO: Throw error or smth?
 		return;
 
 	//Initialize

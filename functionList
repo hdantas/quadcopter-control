@@ -1,0 +1,93 @@
+/* Author: Henrique Dantas */
+
+
+/*checksum.h */
+unsigned char calc_checksum(unsigned char* data, int len);
+int verify_checksum(unsigned char* data, int len);
+void crc_init();
+void printbin(unsigned char c);
+
+/*comm.h*/
+int comm_init();
+void comm_uninit();
+int send_data(comm_type type, unsigned char* data, int len);
+int recv_data(comm_type* type, unsigned char** data, int* len);
+int send_text(const char* text);
+frame_type get_frame_type(unsigned char c);
+int data_length(comm_type type);
+
+/*joystick.h*/
+int joy_open(void);
+int joy_close(void);
+int read_joy();
+
+/*filter.h*/
+void init_kalman(void);
+void reset_kalman(void);
+void kalman_filter_pitch(void);
+void kalman_filter_roll(void);
+void butterworth_filter (void);
+void init_butterworth(void);
+
+/*serial.h*/
+int serial_init();
+void serial_uninit();
+int serial_read(unsigned char* buffer);
+int serial_write(unsigned char c);
+
+/*log_pc*/
+int retrieve_log();
+void parse_log(unsigned char* logfile, int logsize);
+const char* logtype_to_string(log_type type);
+
+/*log.h*/
+void log_data(log_type type, unsigned char* data, int len);
+void log_msg(const char* msg);
+void log_event(log_type event);
+void log_int(int value);
+void log_byte(unsigned char c);
+
+/*convert.h*/
+void convert8to7bitchunk(unsigned char* in, int inlen, unsigned char* out);
+void convert7to8bitchunk(unsigned char* in, int inlen, unsigned char* out);
+unsigned int other_endian(unsigned int value);
+unsigned int make_int(unsigned char* buffer);
+void make_int_sendable(unsigned int value, unsigned char** buffer, int* len);
+unsigned int make_int_swap(unsigned char* buffer);
+void make_int_sendable_swap(unsigned int value, unsigned char** buffer, int* len);
+void printbytes(unsigned char* data, int len);
+
+/*console_IO.h*/
+void	term_initio();
+void	term_exitio();
+void	term_puts(char *s);
+void	term_putchar(char c);
+int	term_getchar_nb();
+int	term_getchar();
+
+/*x32_modes.h*/
+void isr_timer(void);
+void isr_qr_link(void);
+void isr_overflow(void);
+void isr_out_of_memory(void);
+void safe_mode_ctrl(void);
+void panic_mode_ctrl(void);
+void manual_mode_ctrl(void);
+void calibration_mode(void);
+void yaw_mode_ctrl(void);
+void full_mode_ctrl(void);
+void init_state(void);
+void handleMode (void);
+void handleInput (void);
+void init_state(void);
+void clip_AE(void);
+void check_pc_link(void);
+void check_qr_link(void);
+void toggle_led(int i);
+void delay_ms(int ms);
+
+/*x32_log.h*/
+void log_start();
+void log_stop();
+void log_transmit();
+void write_to_log(log_type type, unsigned char* data, int len);
