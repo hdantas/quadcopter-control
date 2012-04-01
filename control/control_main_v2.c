@@ -26,10 +26,10 @@
 #define JS_SENSITIVITY_YAW 512
 #define JS_SENSITIVITY_LIFT 512
 
-#define JS_SENSITIVITY_CEILING_ROLL 256
-#define JS_SENSITIVITY_CEILING_PITCH 256
-#define JS_SENSITIVITY_CEILING_YAW 256
-#define JS_SENSITIVITY_CEILING_LIFT 256
+/*#define JS_SENSITIVITY_CEILING_ROLL 256*/
+/*#define JS_SENSITIVITY_CEILING_PITCH 256*/
+/*#define JS_SENSITIVITY_CEILING_YAW 256*/
+/*#define JS_SENSITIVITY_CEILING_LIFT 256*/
 #define TIME_INTERRUPT 10000
 
 int js_sensitivity[4] = {JS_SENSITIVITY_ROLL, JS_SENSITIVITY_PITCH, JS_SENSITIVITY_YAW, JS_SENSITIVITY_LIFT};
@@ -72,7 +72,6 @@ void sigFunc(int sig) {
 	ualarm(TIME_INTERRUPT, 0);
 }
 
-//gcc -o main main.c comm.c checksum.c serial.c convert.c joy_function.c console_IO.c
 
 int source_button(char c, comm_type *type_c) 
 {	
@@ -120,12 +119,12 @@ int source_button(char c, comm_type *type_c)
 			if(kb_RPYL[3]>KB_SHIFT)
 				kb_RPYL[3]-=1;
 			return 0;
-		case 0x43:		/*right arrow: roll down maybe*/
+		case 0x44:	/*left arrow: roll up*/
 			*type_c=KEYRIGHT;
 			if(kb_RPYL[0]<KB_MAX)
 				kb_RPYL[0] += 1;
 			return 0;
-		case 0x44:		/*left arrow: roll up maybe*/
+		case 0x43:	/*right arrow: roll down*/
 			*type_c=KEYLEFT;
 			if(kb_RPYL[0]>0)
 				kb_RPYL[0] -= 1;
@@ -223,17 +222,17 @@ int main(void) {
 	int quit;
 	char c;
 	
-	oldroll=oldpitch=oldyaw=oldlift=0;
+	oldroll = oldpitch = oldyaw = oldlift = 0;
 
-	quit=0;
+	quit = 0;
 
-	kb_RPYL[0]=kb_RPYL[1]=kb_RPYL[2]=kb_RPYL[3]=KB_SHIFT;
+	kb_RPYL[0] = kb_RPYL[1] = kb_RPYL[2] = kb_RPYL[3] = KB_SHIFT;
 
 	for (i=0;i<4;i++)
 		js_RPYL[i]=0;
 		
 	//Initialize feedback data
-	for (i=0;i<16;i++)
+	for (i=0;i<19;i++)
 		feedbackvalues[i] = 0;
 	
 	
@@ -257,14 +256,17 @@ int main(void) {
 	
 			
 
-		//TODO:remove
+	//TODO:remove
 	//Initialize
-	js_RPYL[0] = 64;
-	js_RPYL[1] = 64;
-	js_RPYL[2] = 64;
+	js_RPYL[0] = 0;
+	js_RPYL[1] = 0;
+	js_RPYL[2] = 0;
 	js_RPYL[3] = 0;
 
-	
+	kb_RPYL[0] = 0;
+	kb_RPYL[1] = 0;
+	kb_RPYL[2] = 0;
+	kb_RPYL[3] = 0;
 
 	while(!quit) {
 
@@ -300,10 +302,10 @@ int main(void) {
 
 			
 		
-		RPYL_value[0]=js_RPYL[0]+kb_RPYL[0] + RPYL_SHIFT;
-		RPYL_value[1]=js_RPYL[1]+kb_RPYL[1] + RPYL_SHIFT;
-		RPYL_value[2]=js_RPYL[2]+kb_RPYL[2] + RPYL_SHIFT;
-		RPYL_value[3]=js_RPYL[3]+kb_RPYL[3] + RPYL_SHIFT;
+		RPYL_value[0] = js_RPYL[0] + kb_RPYL[0] + RPYL_SHIFT;
+		RPYL_value[1] = js_RPYL[1] + kb_RPYL[1] + RPYL_SHIFT;
+		RPYL_value[2] = js_RPYL[2] + kb_RPYL[2] + RPYL_SHIFT;
+		RPYL_value[3] = js_RPYL[3] + kb_RPYL[3] + RPYL_SHIFT;
 
 		
 		if (RPYL_value[0] <= 0) RPYL_value[0] = 0;
@@ -316,7 +318,7 @@ int main(void) {
 		if (RPYL_value[3] >= KB_MAX) RPYL_value[3] = KB_MAX;
 		
 		for (i=0;i<4;i++)
-			RPYL_data[i]=(unsigned char) RPYL_value[i];
+			RPYL_data[i] = (unsigned char) RPYL_value[i];
 
 		clip_RPYL(RPYL_value,5);
 
@@ -325,10 +327,10 @@ int main(void) {
 
 		//printf("roll: %d pitch: %d yaw: %d lift: %d\n", kb_RPYL[0],kb_RPYL[1],js_RPYL[3],kb_RPYL[3]);
 			
-		oldroll=RPYL_data[0];
-		oldpitch=RPYL_data[1];
-		oldyaw=RPYL_data[2];
-		oldlift=RPYL_data[3];
+		oldroll = RPYL_data[0];
+		oldpitch = RPYL_data[1];
+		oldyaw = RPYL_data[2];
+		oldlift = RPYL_data[3];
 
 
 		if(1 == recv_data(&type, &data, &len)) 
@@ -346,6 +348,7 @@ int main(void) {
 				
 				//Update 'GUI'
 				system("clear");
+				//printf("roll: %d pitch: %d yaw: %d lift: %d\n\n", RPYL_data[0],RPYL_data[1],RPYL_data[2],RPYL_data[3]);
 				printf("mode:  %1d\n\n", feedbackvalues[0]);
 				printf("roll:  %4d\tpitch: %4d\tyaw:   %4d\tlift:  %4d\n\n",feedbackvalues[1], feedbackvalues[2], feedbackvalues[3], feedbackvalues[4]);
 				printf("oo1:   %4d\too2:   %4d\too3:   %4d\too4:   %4d\n\n",feedbackvalues[5], feedbackvalues[6], feedbackvalues[7], feedbackvalues[8]);
@@ -353,8 +356,6 @@ int main(void) {
 				printf("gyrox: %4d\tgyroy: %4d\tgyroz: %4d\n\n", feedbackvalues[12], feedbackvalues[13], feedbackvalues[14]);
 				printf("p_yaw: %4d\tp1_full: %4d\tp2_full: %4d\n\n", feedbackvalues[15], feedbackvalues[16], feedbackvalues[17]);
 				printf("control latency: %5d\n", feedbackvalues[18]);
-			
-				
 			}	
 		
 			//Free buffer memory again (IMPORTANT!)

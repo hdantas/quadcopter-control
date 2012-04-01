@@ -102,8 +102,9 @@ void main(void) {
 		}
 		
 		//Display mode
-		X32_display = mode-SAFE;
-
+/*		X32_display = mode-SAFE;*/
+		X32_display = roll;
+		
 		/*Log data*/
 		if (flag_data_loggin == 1){
 			//Fill temporary data structure
@@ -170,8 +171,7 @@ void main(void) {
 			else if (flag_feedback == 33)
 				tempvalue = p1_full;
 			else if (flag_feedback == 35)
-				//tempvalue = p2_full;
-				tempvalue = 25;
+				tempvalue = p2_full;
 			else if (flag_feedback == 37)
 				tempvalue = control_latency_time;
 			

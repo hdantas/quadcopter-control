@@ -19,7 +19,7 @@ void displayData(unsigned char* data, int len);
 
 
 //Global log file (~400kB)
-#define LOG_FILE_SIZE	0x5FFFF
+#define LOG_FILE_SIZE	0x3FFFF
 #define LOG_FILE_LIMIT	LOG_FILE_SIZE - 128
 unsigned char logfile[LOG_FILE_SIZE];
 int logindex = 0;
