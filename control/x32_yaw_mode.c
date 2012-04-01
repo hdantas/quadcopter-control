@@ -6,7 +6,7 @@
 #include "x32_modes.h"
 #include "filter.h"
 
-
+/* Author: Henrique Dantas */
 void yaw_mode_ctrl()
 {
 	//yaw control

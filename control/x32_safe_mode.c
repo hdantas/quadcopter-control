@@ -5,6 +5,7 @@
 #include "comm.h"
 #include "x32_modes.h"
 
+/* Author: Henrique Dantas */
 void safe_mode_ctrl(void)
 {
 // safe mode (mode 0) the ES sends commands to the QR to shutdown the engines.

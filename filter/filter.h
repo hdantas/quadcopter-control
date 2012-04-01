@@ -1,6 +1,8 @@
 #ifndef _FILTER_H
 #define _FILTER_H
 
+/* Author: Enrico Caruso */
+
 #define SCALE_SHIFT_KALMAN 12 //4096
 #define INV_C1 350 //256 old value
 #define INV_C1_P2PHI 268

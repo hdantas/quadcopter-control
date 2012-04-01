@@ -16,7 +16,8 @@
 
 struct termios 	savetty;
 
-
+/*Initialize terminal interface
+* Author: Henrique Dantas */
 void	term_initio()
 {
 	struct termios tty;
@@ -29,21 +30,29 @@ void	term_initio()
         tcsetattr(0, TCSADRAIN, &tty);
 }
 
+/*Restore control
+* Author: Henrique Dantas */
 void	term_exitio()
 {
 	tcsetattr(0, TCSADRAIN, &savetty);
 }
 
+/*Write string
+* Author: Henrique Dantas */
 void	term_puts(char *s) 
 { 
 	fprintf(stderr,"%s",s); 
 }
 
+/*Write character
+* Author: Henrique Dantas */
 void	term_putchar(char c) 
 { 
 	putc(c,stderr); 
 }
 
+/*Read char from keyboard non-blocking
+* Author: Henrique Dantas */
 int	term_getchar_nb() 
 { 
 	static unsigned char line [4];
@@ -62,6 +71,8 @@ int	term_getchar_nb()
         return -1;
 }
 
+/*Read char from keyboard blocking
+* Author: Henrique Dantas */
 int	term_getchar() 
 { 
         int    c;

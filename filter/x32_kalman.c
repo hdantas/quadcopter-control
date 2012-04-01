@@ -11,6 +11,7 @@ int q_bias_pitch, q_kalman_pitch, theta_kalman_pitch, theta_error_pitch;
 int p_bias_roll, p_kalman_roll,phi_kalman_roll,phi_error_roll;
 int p2phi;
 
+/* Author: Enrico Caruso */
 void reset_kalman(void)
 {
 	q_bias_pitch = 0;
@@ -19,6 +20,7 @@ void reset_kalman(void)
 	phi_kalman_roll = 0;
 }
 
+/* Author: Enrico Caruso */
 void kalman_filter_pitch(void)
 {
 	q_kalman_pitch = (s4 << SCALE_SHIFT_KALMAN) - q_bias_pitch;
@@ -28,6 +30,7 @@ void kalman_filter_pitch(void)
 	q_bias_pitch = q_bias_pitch + ((theta_error_pitch* INV_C1_P2PHI) >> FIXED_CONV3);
 }
 
+/* Author: Enrico Caruso */
 void kalman_filter_roll(void)
 {
 	p_kalman_roll = (s3 << SCALE_SHIFT_KALMAN) - p_bias_roll;
@@ -37,6 +40,7 @@ void kalman_filter_roll(void)
 	p_bias_roll = p_bias_roll + ((phi_error_roll*INV_C1_P2PHI) >> FIXED_CONV3);
 }
 
+/* Author: Enrico Caruso */
 void init_kalman(void)
 {
 	q_bias_pitch =  0;

@@ -1,6 +1,8 @@
 #ifndef _X32_MODES_H
 #define _X32_MODES_H
 
+/* Author: Henrique Dantas */
+
 #define X32_timer_per           peripherals[PERIPHERAL_TIMER1_PERIOD]
 #define X32_leds		peripherals[PERIPHERAL_LEDS]
 #define X32_ms_clock		peripherals[PERIPHERAL_MS_CLOCK]
