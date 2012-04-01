@@ -1,6 +1,9 @@
 #ifndef _LOG_H
 #define _LOG_H
 
+/*	Author: Maurijn Neumann
+ */
+
 #define LOG_TYPE_EVENT			0
 #define LOG_TYPE_DATA_STATIC	32
 #define LOG_TYPE_DATA_VAR		48

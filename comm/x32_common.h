@@ -1,6 +1,9 @@
 #ifndef _X32_COMMON_H
 #define _X32_COMMON_H
 
+/*	Author: Maurijn Neumann
+ */
+
 //Comment this out to compile for the QR, leave it in to compile for Nexys board
 #define NEXYS
 

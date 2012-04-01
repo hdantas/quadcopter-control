@@ -26,6 +26,9 @@ unsigned char serial_buffer_send[SERIAL_BUFFER_SIZE];
 int serial_buffer_send_base;
 int serial_buffer_send_top;
 
+/*	Initialise the serial connection on the QR-side
+ *	Author: Maurijn Neumann
+ */
 int serial_init() {
 	//Declare variables
 	unsigned char c;
@@ -59,6 +62,9 @@ int serial_init() {
 	return 0;
 }
 
+/*	Uninitialise the serial connection on the QR-side
+ *	Author: Maurijn Neumann
+ */
 void serial_uninit() {
 	//Disable interrupts
 	DISABLE_INTERRUPT(INTERRUPT_PRIMARY_RX);
@@ -68,9 +74,11 @@ void serial_uninit() {
 	X32_leds &= ~COMM_LED;
 }
 
-/*	Returns 1 if data is available, 0 otherwise 
-	Data itself is placed in *buffer;
-*/
+/*	Attempt to retrieve a byte of data that has come in from the serial link (QR-side)
+ *	Returns 1 if data is available, 0 otherwise 
+ *	Data itself is placed in *buffer;
+ *	Author: Maurijn Neumann
+ */
 int serial_read(unsigned char* buffer) {
 	//Check if buffer holds data
 	if (serial_buffer_recv_base != serial_buffer_recv_top) {
@@ -86,8 +94,10 @@ int serial_read(unsigned char* buffer) {
 	}
 }
 
-/*	Returns 1 if data was written directly, 0 if placed in buffer, -1 otherwise
-*/
+/*	Write a byte of data to the serial link or set it up to be sent later (QR-side)
+ *	Returns 1 if data was written directly, 0 if placed in buffer, -1 otherwise
+ *	Author: Maurijn Neumann
+ */
 int serial_write(unsigned char c) {
 	//Check if data can be written immediately
 	if ((serial_buffer_send_top == serial_buffer_send_base) &&
@@ -116,6 +126,9 @@ int serial_write(unsigned char c) {
 }
 
 //ISRs
+/*	ISR for incoming serial data on the QR-side
+ *	Author: Maurijn Neumann
+ */
 void isr_serial_rx(void) {
 	//Keep reading while flag is raised
 	while (X32_serial_status & 0x02) {
@@ -132,6 +145,9 @@ void isr_serial_rx(void) {
 		}
 	}
 }
+/*	ISR for outgoing data on the serial link on the QR-side
+ *	Author: Maurijn Neumann
+ */
 void isr_serial_tx(void) {
 	//Check flag and buffer contents
 	if ((X32_serial_status & 0x01) &&

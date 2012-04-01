@@ -10,8 +10,10 @@
 //Global variables
 int serial_handle;
 
-/*	Returns 0 if successful, -1 otherwise
-*/
+/*	Initialise the serial connection on the PC-side
+ *	Returns 0 if successful, -1 otherwise
+ *	Author: Maurijn Neumann
+ */
 int serial_init() {
 	//Declare variables
 	struct termios tty;
@@ -48,21 +50,27 @@ int serial_init() {
 
 	return 0;
 }
-
+/*	Uninitialise the serial connection on the PC-side
+ *	Author: Maurijn Neumann
+ */
 void serial_uninit() {
 	//Close RS232 link
 	close(serial_handle);
 	serial_handle = 0;
 }
 
-/*	Returns 1 if byte was read and placed in buffer, 0 otherwise
+/*	Attempt to read a byte of data from the serial link on the PC-side
+ *	Returns 1 if byte was read and placed in buffer, 0 otherwise
+ *	Author: Maurijn Neumann
 */
 int serial_read(unsigned char* buffer) {
 	//Attempt to read single byte from serial link
 	return read(serial_handle, buffer, 1);
 }
 
-/*	Returns 1 if byte was written successfully, 0 if busy, -1 on error.
+/*	Write a byte of data to the serial link (blocking) on the PC-side
+ *	Returns 1 if byte was written successfully, -1 on error.
+ *	Author: Maurijn Neumann
 */
 int serial_write(unsigned char c) {
 	//Declare Variables

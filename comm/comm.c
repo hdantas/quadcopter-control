@@ -14,9 +14,9 @@ int frame_buffer_top;
 
 frame_type await_frame_type;
 
-/*
-	Initialise everything that has to do with communication
-*/
+/*	Initialise everything that has to do with communication
+ *	Author: Maurijn Neumann
+ */
 int comm_init() {
 	//Frame buffer
 	frame_buffer_top = 0;
@@ -33,24 +33,24 @@ int comm_init() {
 	return 0;
 }
 
-/*	
-	Uninitialise everything that had to do with communication
-*/
+/*	Uninitialise everything that had to do with communication
+ *	Author: Maurijn Neumann
+ */
 void comm_uninit() {
 	//Close serial connection
 	serial_uninit();
 }
 
-/*
-	Transmit data over the serial link
-	Input:
-		type	packet type (see comm.h)
-		data	pointer to data buffer
-		len		length of data buffer
-	Returns:
-		-1	on error
-		0	on success
-*/
+/*	Transmit data over the serial link
+ *	Input:
+ *		type	packet type (see comm.h)
+ *		data	pointer to data buffer
+ *		len		length of data buffer
+ *	Returns:
+ *		-1	on error
+ *		0	on success
+ *	Author: Maurijn Neumann
+ */
 int send_data(comm_type type, unsigned char* data, int len) {
 	//Declare variables
 	int expected_length;
@@ -101,9 +101,9 @@ int send_data(comm_type type, unsigned char* data, int len) {
 	return 0;
 }
 
-/*
-	Shorthand to send a string (max length: 16)
-*/
+/*	Shorthand to send a string (max length: 16)
+ *	Author: Maurijn Neumann
+ */
 int send_text(const char* text) {
 	//Declare Variables
 	int len;
@@ -122,21 +122,21 @@ int send_text(const char* text) {
 	return send_data(TEXT_CHUNK, buffer, 16);
 }
 
-/*
-	Receive data using the serial link
-	Input:
-		type	pointer
-		data	pointer
-		len		pointer
-	Output:
-		*type	type of packet (see comm.h)
-		*data	packet data buffer (dynamically allocated, needs to be free'd)
-		*len	length of dynamically allocated data buffer
-	Returns:
-		-1	on error
-		0	if no data was available
-		1	if data was available and read
-*/
+/*	Receive data using the serial link
+ *	Input:
+ *		type	pointer
+ *		data	pointer
+ *		len		pointer
+ *	Output:
+ *		*type	type of packet (see comm.h)
+ *		*data	packet data buffer (dynamically allocated, needs to be free'd)
+ *		*len	length of dynamically allocated data buffer
+ *	Returns:
+ *		-1	on error
+ *		0	if no data was available
+ *		1	if data was available and read
+ *	Author: Maurijn Neumann
+ */
 int recv_data(comm_type* type, unsigned char** data, int* len) {
 	//Declare variables
 	unsigned char c;
@@ -247,9 +247,9 @@ int recv_data(comm_type* type, unsigned char** data, int* len) {
 }
 
 //Frame crap
-/*
-	Translate frame type from binary values into clear enumerations
-*/
+/*	Translate frame type from binary values into clear enumerations
+ *	Author: Maurijn Neumann
+ */
 frame_type get_frame_type(unsigned char c) {
 	if ((c & 0xC0) == 0x80)
 		return HEAD;
@@ -262,9 +262,9 @@ frame_type get_frame_type(unsigned char c) {
 
 }
 
-/*
-	Calculate packet data length based on packet type
-*/
+/*	Calculate packet data length based on packet type
+ *	Author: Maurijn Neumann
+ */
 int data_length(comm_type type) {
 	if (type >=	COMM_TYPE_SIZE_VAR)
 		return -1;	//Undefined
