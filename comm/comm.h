@@ -1,6 +1,9 @@
 #ifndef _COMM_H
 #define _COMM_H
 
+/*	Author: Maurijn Neumann
+ */
+
 //Packet types
 #define COMM_TYPE_SIZE_0	0
 #define COMM_TYPE_SIZE_1	35

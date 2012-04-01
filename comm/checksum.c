@@ -8,6 +8,7 @@ unsigned char crc_lookup_table[256];
 
 /*	Calculate a 6-bit CRC using the polynomial x^6 + x + 1
  *	with help of a 256byte lookup table.
+ *	Author: Maurijn Neumann
  */
 unsigned char calc_checksum(unsigned char* data, int len) {
 	//Declare variables
@@ -35,6 +36,10 @@ unsigned char calc_checksum(unsigned char* data, int len) {
 	return (remainder >> 2);
 }
 
+/*	Verify a datastream with trailing 6-bit CRC checksum
+ *	Returns 1 if checksum is valid, 0 otherwise
+ *	Author: Maurijn Neumann
+ */
 int verify_checksum(unsigned char* data, int len) {
 	//Declare variables
 	unsigned char checksum;
@@ -45,7 +50,9 @@ int verify_checksum(unsigned char* data, int len) {
 	//Verify
 	return (checksum == 0x00);
 }
-
+/*	Initialise the CRC lookup table
+ *	Author: Maurijn Neumann
+ */
 void crc_init() {
 	//Declare variables
 	int data;
@@ -71,6 +78,9 @@ void crc_init() {
 	}
 }
 
+/*	Debug function to quickly print a byte in binary format
+ *	Author: Maurijn Neumann
+ */
 void printbin(unsigned char c) {
 	//Declare variables
 	int I;
@@ -79,6 +89,8 @@ void printbin(unsigned char c) {
 	for (I = 0; I < 8; I++)
 		printf("%X", ((c >> (7-I)) & 0x01));
 }
+/*	Previous (less efficient) CRC versions as well as testing code
+ *	Author: Maurijn Neumann
 /*
 void main() {
 	int I;

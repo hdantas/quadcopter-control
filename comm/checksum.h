@@ -1,6 +1,9 @@
 #ifndef _CHECKSUM_H
 #define _CHECKSUM_H
 
+/*	Author: Maurijn Neumann
+ */
+
 unsigned char calc_checksum(unsigned char* data, int len);
 int verify_checksum(unsigned char* data, int len);
 

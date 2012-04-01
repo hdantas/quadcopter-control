@@ -1,6 +1,9 @@
 #ifndef _X32_LOG_H
 #define _X32_LOG_H
 
+/*	Author: Maurijn Neumann
+ */
+
 void log_start();
 void log_stop();
 

@@ -11,19 +11,27 @@
 #define FILENAME_LOG_RAW	"log.bin"
 #define FILENAME_LOG_PARSED "log.txt"
 
-/*
-	These functions were replaced by macros
-*/
+/*	Log the occurrence of an event on the PC-side
+ *	Author: Maurijn Neumann
+ */
 void log_event(log_type event) {
 //	printf("Log event: %i\n", event);
 }
+/*	Log an integer value on the PC-side
+ *	Author: Maurijn Neumann
+ */
 void log_int(int value) {
 //	printf("Log int: %i\n", value);
 }
+/*	Log a byte of data on the PC-side
+ *	Author: Maurijn Neumann
+ */
 void log_byte(unsigned char c) {
 //	printf("Log byte: %.02X\n", c);
 }
-
+/*	Log one or more bytes of data on the PC-side
+ *	Author: Maurijn Neumann
+ */
 void log_data(log_type type, unsigned char* data, int len) {
 	//Declare Variables
 /*	int I;
@@ -34,14 +42,17 @@ void log_data(log_type type, unsigned char* data, int len) {
 	printf("\n");
 */	
 }
+/*	Log a text message on the PC-side
+ *	Author: Maurijn Neumann
+ */
 void log_msg(const char* msg) {
 	printf("Log message: %s\n", msg);
 }
 
-/*
-	Retrieves logfile from QR and stores on disk in binary format
-	Blocking and ugly
-	Returns 0 on success, -1 otherwise
+/*	Retrieves logfile from QR and stores on disk in binary format
+ *	Blocking and ugly
+ *	Returns 0 on success, -1 otherwise
+ *	Author: Maurijn Neumann
 */
 int retrieve_log() {
 	//Declare Variables
@@ -149,9 +160,9 @@ int retrieve_log() {
 	return 0;
 }
 
-/*
-	Translates binary logfile into human-readable format
-*/
+/*	Translates binary logfile into human-readable format
+ *	Author: Maurijn Neumann
+ */
 void parse_log(unsigned char* logfile, int logsize) {
 	//Declare Variables
 	int logindex;
@@ -261,7 +272,9 @@ void parse_log(unsigned char* logfile, int logsize) {
 		return;
 	*/
 }
-
+/*	Convert the enumerated type of a log entry to string
+ *	Author: Maurijn Neumann
+ */
 const char* logtype_to_string(log_type type) {
 	switch (type) {
 		//Events

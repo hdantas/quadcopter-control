@@ -25,9 +25,9 @@ unsigned char logfile[LOG_FILE_SIZE];
 int logindex = 0;
 char logflag = 0;
 
-/*
-	Start logging
-*/
+/*	Start logging
+ *	Author: Maurijn Neumann
+ */
 void log_start() {
 	//Clear logfile
 	for (logindex = 0; logindex < LOG_FILE_SIZE; logindex++)
@@ -40,9 +40,9 @@ void log_start() {
 	//Log first event
 	log_event(LOG_START);
 }
-/*
-	Stop logging
-*/
+/*	Stop logging
+ *	Author: Maurijn Neumann
+ */
 void log_stop() {
 	//Log last event
 	log_event(LOG_STOP);
@@ -50,14 +50,13 @@ void log_stop() {
 	logflag = 0;
 }
 
-/*
-	Apply changes to the logfile
-	Input:
-		type	type of log entry (see log.h)
-		data	data buffer
-		len		length of data in buffer
-*/
-//TODO: Inline possible?
+/*	Apply changes to the logfile on the QR-side
+ *	Input:
+ *		type	type of log entry (see log.h)
+ *		data	data buffer
+ *		len		length of data in buffer
+ *	Author: Maurijn Neumann
+ */
 void write_to_log(log_type type, unsigned char* data, int len) {
 	//Declare Variables
 	unsigned int timestamp;
@@ -147,9 +146,9 @@ void write_to_log(log_type type, unsigned char* data, int len) {
 		ENABLE_INTERRUPT(INTERRUPT_GLOBAL);
 }*/
 
-/*
-	Shorthand to log a string
-*/
+/*	Shorthand to log a string on the QR-side
+ *	Author: Maurijn Neumann
+ */
 void log_msg(const char* msg) {
 	//Declare Variables
 	int len;
@@ -172,10 +171,9 @@ void log_msg(const char* msg) {
 	//Free memory
 	free(data);
 }
-/*
-	Shorthand to log binary data
-*/
-
+/*	Shorthand to log binary data on the QR-side
+ *	Author: Maurijn Neumann
+ */
 void log_data(log_type type, unsigned char* data, int len) {
 	//Declare Variables
 	unsigned char* buffer;
@@ -249,32 +247,32 @@ void log_data(log_type type, unsigned char* data, int len) {
 	//Free memory
 	free(buffer);
 }*/
-/*
-	Shorthand to log an event (w/o data)
-*/
+/*	Shorthand to log an event (w/o data) on the QR-side
+ *	Author: Maurijn Neumann
+ */
 void log_event(log_type event) {
 	//Write to log
 	write_to_log(event, 0, 0);
 }
-/*
-	Shorthand to log an integer value directly
-*/
+/*	Shorthand to log an integer value on the QR-side
+ *	Author: Maurijn Neumann
+ */
 void log_int(int value) {
 	//Write to log
 	write_to_log(LOG_INT, (unsigned char*) &value, 4);
 }
-/*
-	Shorthand to log a single byte directly
-*/
+/*	Shorthand to log a single byte on the QR-side
+ *	Author: Maurijn Neumann
+ */
 void log_byte(unsigned char c) {
 	//Write to log
 	write_to_log(LOG_BYTE, &c, 1);
 }
 
-/*
-	Transmits the logfile over the serial link. Should be called upon receipt of REQ_LOG packet.
-	Blocking and ugly.
-*/
+/*	Transmits the logfile over the serial link. Should be called upon receipt of REQ_LOG packet.
+ *	Blocking and ugly.
+ *	Author: Maurijn Neumann
+ */
 void log_transmit() {
 	//Declare Variables
 	int time;
@@ -407,7 +405,9 @@ void log_transmit() {
 	log_event(LOG_START);
 }
 */
-
+/*	Debug function to slowly show data on the embedded display, one byte every second
+ *	Author: Maurijn Neumann
+ */
 void displayData(unsigned char* data, int len) {
 	//Declare Variables
 	int I;

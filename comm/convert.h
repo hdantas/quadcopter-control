@@ -1,6 +1,9 @@
 #ifndef _CONVERT_H
 #define _CONVERT_H
 
+/*	Author: Maurijn Neumann
+ */
+
 #define CHUNK_SIZE_7BIT		8
 #define CHUNK_SIZE_8BIT		7
 

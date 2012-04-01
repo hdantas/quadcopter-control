@@ -1,6 +1,9 @@
 #ifndef _SERIAL_H
 #define _SERIAL_H
 
+/*	Author: Maurijn Neumann
+ */
+
 //Use serial.c for the PC version and x32_serial.c for the QR version
 
 int serial_init();

@@ -8,11 +8,12 @@
 
 void test();
 
-/*
-	in		start of input
-	len		number of bytes to put in chunk
-	out		output buffer, should be predefined with length multiple of CHUNK_LEN_7BIT
-*/
+/*	Convert an 8-bit/byte chunk of data to the 7-bit/byte format
+ *	in		start of input
+ *	len		number of bytes to put in chunk
+ *	out		output buffer, should be predefined with length multiple of CHUNK_LEN_7BIT
+ *	Author: Maurijn Neumann
+ */
 void convert8to7bitchunk(unsigned char* in, int len, unsigned char* out) {
 	//Declare variables
 	int I, J;
@@ -50,10 +51,11 @@ void convert8to7bitchunk(unsigned char* in, int len, unsigned char* out) {
 	}
 }
 
-/*
-	in		input buffer, should be CHUNK_SIZE_7BIT bytes
-	out		output buffer, should be CHUNK_SIZE_8BIT bytes
-*/
+/*	Convert a 7-bit/byte data chunk to the 8-bit/byte format
+ *	in		input buffer, should be CHUNK_SIZE_7BIT bytes
+ *	out		output buffer, should be CHUNK_SIZE_8BIT bytes
+ *	Author: Maurijn Neumann
+ */
 void convert7to8bitchunk(unsigned char* in, int len, unsigned char* out) {
 	//Declare variables
 	int I, J;
@@ -86,9 +88,9 @@ void convert7to8bitchunk(unsigned char* in, int len, unsigned char* out) {
 	}
 }
 
-/*
-	Change little endianness to big endianness and vice versa
-*/
+/*	Change little endianness to big endianness and vice versa
+ *	Author: Maurijn Neumann
+ */
 unsigned int other_endian(unsigned int value) {
 	return (value >> 24) |
 		((value >> 8) & 0x0000FF00) |
@@ -96,10 +98,9 @@ unsigned int other_endian(unsigned int value) {
 		(value << 24);
 }
 
-/*
-	Make an integer out of a CHUNK_SIZE_7BIT char array;
-		change endianness for _swap versions
-*/
+/*	Make an integer out of a 7-bit/byte data chunk
+ *	Author: Maurijn Neumann
+ */
 unsigned int make_int(unsigned char* buffer) {
 	//Declare Variables
 	unsigned char data[CHUNK_SIZE_8BIT];
@@ -111,6 +112,14 @@ unsigned int make_int(unsigned char* buffer) {
 	//Change endianness and return
 	return value;
 }
+/*	Create a 7-bit/byte data chunk from an integer
+ *	In
+ *		value	integer value to convert
+ *	Out
+ *		buffer	pointer to 7-bit/byte data chunk (should be free'd after)
+ *		len		data chunk length
+ *	Author: Maurijn Neumann
+ */
 void make_int_sendable(unsigned int value, unsigned char** buffer, int* len) {
 	//Declare Variables
 	unsigned char intbuffer[4];
@@ -124,6 +133,9 @@ void make_int_sendable(unsigned int value, unsigned char** buffer, int* len) {
 	memcpy(intbuffer, &value, 4);
 	convert8to7bitchunk(intbuffer, 4, *buffer);
 }
+/*	Make an integer out of a 7-bit/byte data chunk and swap endianness
+ *	Author: Maurijn Neumann
+ */
 unsigned int make_int_swap(unsigned char* buffer) {
 	//Declare Variables
 	unsigned char data[CHUNK_SIZE_8BIT];
@@ -138,6 +150,14 @@ unsigned int make_int_swap(unsigned char* buffer) {
 			((value << 8) & 0x00FF0000) |
 			(value << 24);
 }
+/*	Create a 7-bit/byte data chunk from an integer and swap endianness
+ *	In
+ *		value	integer value to convert
+ *	Out
+ *		buffer	pointer to 7-bit/byte data chunk (should be free'd after)
+ *		len		data chunk length
+ *	Author: Maurijn Neumann
+ */
 void make_int_sendable_swap(unsigned int value, unsigned char** buffer, int* len) {
 	//Declare Variables
 	unsigned char intbuffer[4];
@@ -158,7 +178,9 @@ void make_int_sendable_swap(unsigned int value, unsigned char** buffer, int* len
 	convert8to7bitchunk(intbuffer, 4, *buffer);
 }
 
-
+/*	Debug and obsolete code below
+ *	Author: Maurijn Neumann
+ */
 /*
 //Nasty way to compress most of an integer, losing 4 MSB
 int convert8to7bitint(int value) {
@@ -174,6 +196,9 @@ int convert7to8bitint(int value) {
 			(value & 0x0000007F);
 }
 */
+/*	Debug function to efficiently print all bytes in a packet
+ *	Author: Maurijn Neumann
+ */
 void printbytes(unsigned char* data, int len) {
 	int I;
 	for (I = 0; I < len; I++)
