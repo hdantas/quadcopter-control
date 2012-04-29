@@ -33,7 +33,7 @@ int p_yaw;	//proportional control value of yaw control
 int p1_full, p2_full;	//proportional controls value of full control
 
 unsigned char* data;	//body of packets
-int len;		//lenght of packets
+int len;		//length of packets
 
 int datalogbuffer[16];	//Array to efficiently add values to log
 int tempvalue;
